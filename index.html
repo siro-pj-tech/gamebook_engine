@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI GameBook Engine v1.0</title>
+    <style>
+        /* =========================================
+           基本設定 & 背景
+           ========================================= */
+        body { 
+            margin: 0; padding: 0; 
+            background: url('bg_gamebooks.png') no-repeat center center fixed; 
+            background-size: cover; 
+            font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+            color: #2c1a12; 
+            height: 100vh; 
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #main-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        /* ヘッダー */
+        #header-bar {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            background: rgba(0,0,0,0.6); 
+            color: #f0e68c;
+            text-shadow: 2px 2px 4px #000;
+            font-size: 1.4em;
+            font-weight: bold;
+            z-index: 10;
+            border-bottom: 1px solid #5d4037;
+        }
+
+        /* 本の本体 (マスクエリア) */
+        #book-wrapper {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        #book-spread {
+            display: flex;
+            width: 95%;
+            max-width: 1200px;
+            height: 90%;
+            background-color: rgba(250, 245, 235, 0.92); /* 紙のクリーム色 */
+            box-shadow: 
+                0 0 20px rgba(0,0,0,0.5), 
+                inset 0 0 50px rgba(139, 69, 19, 0.1); 
+            border-radius: 4px;
+            border: 1px solid #8d6e63;
+            position: relative;
+        }
+        
+        #book-spine {
+            width: 2px;
+            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.2), transparent);
+            height: 100%;
+        }
+
+        .page {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 左ページ */
+        #scene-visual {
+            width: 100%;
+            height: 40%;
+            background-color: #d7ccc8;
+            border: 2px solid #5d4037;
+            object-fit: cover;
+            border-radius: 2px;
+            filter: sepia(0.3);
+        }
+
+        #scene-text-area {
+            flex-grow: 1;
+            overflow-y: auto;
+            font-size: 1.25em;
+            line-height: 1.8;
+            border-bottom: 1px dashed #8d6e63;
+            padding-bottom: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: #8d6e63 transparent;
+        }
+
+        #inventory-area {
+            height: auto;
+            min-height: 40px;
+            font-size: 0.9em;
+            color: #5d4037;
+            background: rgba(0,0,0,0.03);
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .inventory-tag {
+            display: inline-block;
+            background: #fff;
+            border: 1px solid #8d6e63;
+            padding: 2px 8px;
+            margin: 2px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        /* 右ページ */
+        #chat-log-area {
+            flex-grow: 1;
+            height: 60%;
+            overflow-y: auto;
+            font-size: 1.1em;
+            line-height: 1.6;
+            padding-right: 10px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 4px;
+            padding: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: #8d6e63 transparent;
+        }
+        .log-entry { margin-bottom: 15px; border-bottom: 1px solid rgba(93, 64, 55, 0.2); padding-bottom: 10px; }
+        .log-ai { color: #2c1a12; }
+        .log-user { color: #1565c0; font-style: italic; font-weight: bold; }
+        .log-system { color: #757575; font-size: 0.85em; }
+        .log-usage { font-size: 0.75em; color: #aaa; text-align: right; margin-top: -5px; }
+
+        #choices-area {
+            min-height: 30%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            justify-content: flex-end;
+            padding-top: 10px;
+            border-top: 1px solid #8d6e63;
+        }
+        
+        .book-btn {
+            background: #fff;
+            border: 1px solid #5d4037;
+            padding: 12px 15px;
+            text-align: left;
+            cursor: pointer;
+            font-family: "Yu Mincho", serif;
+            font-weight: bold;
+            color: #3e2723;
+            box-shadow: 2px 2px 0px rgba(93, 64, 55, 0.2);
+            transition: all 0.1s;
+        }
+        .book-btn:hover {
+            background: #efebe9;
+            transform: translateY(-1px);
+            box-shadow: 2px 3px 2px rgba(93, 64, 55, 0.3);
+        }
+        .book-btn:active { transform: translateY(1px); box-shadow: none; }
+        .book-btn.disabled { opacity: 0.6; cursor: not-allowed; background: #d7ccc8; }
+
+        /* フッター */
+        #footer-bar {
+            height: 50px;
+            background: rgba(30, 20, 10, 0.85);
+            color: #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            font-size: 0.85em;
+            border-top: 1px solid #5d4037;
+        }
+
+        #stats-monitor {
+            font-family: "Consolas", monospace;
+            display: flex;
+            gap: 15px;
+        }
+        .stat-item { color: #81c784; }
+        .stat-label { color: #aaa; margin-right: 4px; }
+        .limit-warn { color: #ffeb3b; }
+        .limit-danger { color: #ff5252; font-weight: bold; }
+
+        .system-btn {
+            background: #4e342e;
+            color: #fff;
+            border: 1px solid #6d4c41;
+            padding: 5px 12px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 0.9em;
+            margin-left: 10px;
+        }
+        .system-btn:hover { background: #6d4c41; }
+        .system-btn.disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* モーダル */
+        #config-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 999;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .modal-box {
+            background: #fffaf0; color: #3e2723;
+            padding: 30px; border-radius: 4px; border: 4px double #5d4037;
+            width: 450px; max-width: 90%;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            position: relative;
+        }
+        
+        /* ▼▼▼ 追加：APIキー入力欄周りのスタイル ▼▼▼ */
+        .api-input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0 15px;
+        }
+        .api-input-group input { margin: 0; }
+        .help-btn {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            background: #8d6e63; color: white;
+            border: none; cursor: pointer;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .help-box {
+            display: none;
+            background: #efebe9;
+            border: 1px solid #8d6e63;
+            padding: 10px;
+            font-size: 0.85em;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            line-height: 1.5;
+        }
+        .help-box a { color: #1565c0; }
+
+        input { padding: 10px; border: 1px solid #8d6e63; background: #fff; width: 100%; box-sizing: border-box; }
+        h2 { text-align: center; margin-top: 0; border-bottom: 2px solid #8d6e63; padding-bottom: 10px; }
+
+    </style>
+    <script type="importmap">
+      { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
+    </script>
+</head>
+<body>
+
+    <div id="config-modal">
+        <div class="modal-box">
+            <h2>AI GameBook Engine v1.0</h2>
+            
+            <label>1. Gemini API Key</label>
+            <div class="api-input-group">
+                <input type="password" id="api-key" placeholder="API Keyを入力">
+                <button class="help-btn" onclick="toggleHelp()">?</button>
+            </div>
+            
+            <div id="help-text" class="help-box">
+                <strong>【APIキーの取得方法】</strong><br>
+                1. <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> にアクセス<br>
+                2. Googleアカウントでログイン<br>
+                3. 「Create API key」をクリック<br>
+                4. キーをコピーしてここに貼り付け<br>
+                ※ 利用は無料枠の範囲内で行われます
+            </div>
+
+            <label>2. 冒険の書 (JSONファイル)</label>
+
+	<select id="preset-select" style="padding:10px; width:100%; margin-bottom:10px; background:#fff; border:1px solid #8d6e63;">
+        	<option value="">(収録タイトルを選択する場合はこちら)</option>
+        	<option value="horror_village.json">サンプル冒険：蝉時雨の忌み村</option>
+	</select>
+
+            <input type="file" id="json-file" accept=".json" onchange="document.getElementById('preset-select').value=''">
+            
+            <button class="book-btn" onclick="startNewGame()" style="width:100%; text-align:center; background:#8d6e63; color:white;">物語を始める</button>
+            <div style="text-align:center; margin:10px; color:#888;">または</div>
+            
+            <input type="file" id="save-file" accept=".json" style="display:none" onchange="loadSaveGame(this)">
+            <button class="book-btn" onclick="checkAndLoadSave()" style="width:100%; text-align:center; background:#d7ccc8;">しおりから再開</button>
+            
+            <div id="error-message" style="color:#d32f2f; margin-top:10px; font-size:0.9em; text-align:center; font-weight:bold;"></div>
+        </div>
+    </div>
+
+    <div id="main-container">
+        <div id="header-bar">
+            <span id="game-title">AI GameBook Engine</span>
+        </div>
+
+        <div id="book-wrapper">
+            <div id="book-spread">
+                <div class="page" id="left-page">
+                    <img id="scene-visual" src="" alt="挿絵">
+                    <div id="scene-text-area">物語を読み込んでいます...</div>
+                    <div id="inventory-area">
+                        <strong>所持品:</strong> <span id="inventory-list">なし</span>
+                    </div>
+                </div>
+                
+                <div id="book-spine"></div>
+
+                <div class="page" id="right-page">
+                    <div id="chat-log-area">
+                        <div class="log-entry log-system">システム: 準備完了</div>
+                    </div>
+                    <div id="choices-area">
+                        </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="footer-bar">
+            <div id="stats-monitor">
+                <span class="stat-item"><span class="stat-label">RPM:</span><span id="stat-rpm">0/15</span></span>
+                <span class="stat-item"><span class="stat-label">TPM:</span><span id="stat-tpm">0/1M</span></span>
+                <span class="stat-item"><span class="stat-label">RPD:</span><span id="stat-rpd">0/1500</span></span>
+            </div>
+
+            <div style="display:flex; align-items:center;">
+                <span style="margin-right:5px;">文字:</span>
+                <input type="range" min="14" max="24" value="18" oninput="changeFontSize(this.value)" style="width:60px; margin:0;">
+                <button class="system-btn" onclick="saveProgress()">💾 中断</button>
+                <button id="btn-back" class="system-btn" onclick="executeBack()">↩️ 戻る</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { GoogleGenerativeAI } from "@google/generative-ai";
+
+        window.scenarioData = null;
+        window.genAI = null;
+        window.model = null;
+        window.inventory = new Set();
+        window.cassetteFileName = "";
+        window.backUsed = false;
+        window.lastTurnState = null;
+        
+        const LIMITS = { RPM: 15, TPM: 1000000, RPD: 1500 };
+        let requestHistory = [];
+
+        window.onload = () => {
+            const savedKey = localStorage.getItem('gemini_api_key');
+            if (savedKey) document.getElementById('api-key').value = savedKey;
+            updateStats(0);
+        };
+
+        // ▼▼▼ 追加：ヘルプ表示切り替え ▼▼▼
+        window.toggleHelp = () => {
+            const el = document.getElementById('help-text');
+            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+        };
+
+        window.changeFontSize = (size) => {
+            document.getElementById('scene-text-area').style.fontSize = size + "px";
+            document.getElementById('chat-log-area').style.fontSize = size + "px";
+        };
+
+	// prepareGame関数をこれに置き換えてください
+	async function prepareGame() {
+	    const apiKey = document.getElementById('api-key').value;
+	    const fileInput = document.getElementById('json-file');
+	    const presetSelect = document.getElementById('preset-select');
+	    const errorMsg = document.getElementById('error-message');
+
+	    if (!apiKey) { errorMsg.innerText = "APIキーを入力してください"; return false; }
+
+	    localStorage.setItem('gemini_api_key', apiKey);
+    
+	    try {
+	        window.genAI = new GoogleGenerativeAI(apiKey);
+	        window.model = window.genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); 
+	    } catch(e) {
+	        errorMsg.innerText = "モデル初期化エラー: " + e;
+	        return false;
+	    }
+
+	    // ▼▼▼ ここが変更点：ファイル読み込みロジック ▼▼▼
+    
+	    // A. ユーザーがローカルファイルを選択している場合
+	    if (fileInput.files.length > 0) {
+	        window.cassetteFileName = fileInput.files[0].name;
+	        return new Promise((resolve) => {
+	            const reader = new FileReader();
+	            reader.onload = (e) => {
+	                try {
+	                    window.scenarioData = JSON.parse(e.target.result);
+	                    const title = window.scenarioData.cartridge_info?.title || "Unknown Adventure";
+	                    document.title = title;
+	                    document.getElementById('game-title').innerText = title;
+	                    resolve(true);
+	                } catch (err) {
+	                    errorMsg.innerText = "JSON読込エラー: " + err; resolve(false);
+	                }
+	            };
+	            reader.readAsText(fileInput.files[0]);
+	        });
+	    } 
+	    // B. プリセット（サーバー上のファイル）が選ばれている場合
+	    else if (presetSelect.value) {
+	        const fileName = presetSelect.value; // "sample.json" など
+	        window.cassetteFileName = fileName;
+	        
+	        try {
+	            // fetchを使ってサーバー（GitHubなど）からJSONを取得
+	            const response = await fetch(fileName);
+	            if (!response.ok) throw new Error("File not found");
+	            
+	            window.scenarioData = await response.json();
+	            const title = window.scenarioData.cartridge_info?.title || "Unknown Adventure";
+	            document.title = title;
+	            document.getElementById('game-title').innerText = title;
+	            return true;
+	        } catch (err) {
+	            errorMsg.innerText = "プリセット読込エラー: " + err;
+	            return false;
+	        }
+	    }
+	    // C. どっちも選んでない場合
+	    else {
+	        errorMsg.innerText = "「冒険の書」を選択してください";
+	        return false;
+	    }
+	}
+
+        window.startNewGame = async () => {
+            if (!await prepareGame()) return;
+            window.inventory = new Set();
+            window.backUsed = false;
+            window.lastTurnState = null;
+            updateInventoryUI();
+            updateBackBtnState();
+            document.getElementById('config-modal').style.display = 'none';
+            loadScene(window.scenarioData.events[0].id);
+        };
+
+        window.checkAndLoadSave = () => {
+            const cassetteInput = document.getElementById('json-file');
+            const errorMsg = document.getElementById('error-message');
+            
+            if (cassetteInput.files.length === 0) {
+                errorMsg.innerText = "⚠️ 先に「冒険の書(JSON)」をセットしてください";
+                return;
+            }
+            errorMsg.innerText = "";
+            document.getElementById('save-file').click();
+        };
+
+        window.loadSaveGame = async (input) => {
+            const saveFile = input.files[0];
+            if (!saveFile) return;
+            if (!await prepareGame()) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const saveData = JSON.parse(e.target.result);
+                    if (saveData.cassetteFileName !== window.cassetteFileName) {
+                        alert(`違う物語のしおりです。\n必要: ${saveData.cassetteFileName}\n現在: ${window.cassetteFileName}`);
+                        return;
+                    }
+                    window.inventory = new Set(saveData.inventory);
+                    window.backUsed = saveData.backUsed;
+                    window.lastTurnState = saveData.lastTurnState;
+                    updateInventoryUI();
+                    updateBackBtnState();
+                    document.getElementById('config-modal').style.display = 'none';
+                    addLog(`【システム】 しおりから再開します (${saveData.date})`, 'system');
+                    loadScene(saveData.currentSceneId);
+                } catch (err) { alert("ロード失敗: " + err); }
+            };
+            reader.readAsText(saveFile);
+        };
+
+        window.loadScene = (sceneId) => {
+            const scene = window.scenarioData.events.find(e => e.id === sceneId);
+            if (!scene) return;
+            window.currentSceneId = sceneId;
+
+            if (scene.get_item && !window.inventory.has(scene.get_item)) {
+                window.inventory.add(scene.get_item);
+                updateInventoryUI();
+                addLog(`【入手】 ${scene.get_item}`, 'system');
+            }
+
+            const visual = document.getElementById('scene-visual');
+            visual.style.opacity = 0;
+            setTimeout(() => {
+                visual.src = scene.image_url || "https://placehold.co/600x400/d7ccc8/5d4037?text=No+Image";
+                visual.style.opacity = 1;
+            }, 300);
+
+            document.getElementById('scene-text-area').innerHTML = 
+                `<strong style="font-size:1.1em; color:#8d6e63;">◆ ${scene.title}</strong><br><br>${scene.text}`;
+            
+            addLog(`\n━━ ${scene.title} ━━`, 'system');
+            renderButtons(scene);
+        };
+
+        function renderButtons(scene) {
+            const area = document.getElementById('choices-area');
+            area.innerHTML = ''; 
+            if (scene.next_options && scene.next_options.length > 0) {
+                scene.next_options.forEach(opt => {
+                    const btn = document.createElement('div');
+                    if (opt.req_item && !window.inventory.has(opt.req_item)) {
+                        btn.className = 'book-btn disabled';
+                        btn.innerHTML = `🔒 ${opt.label} <small>(必要: ${opt.req_item})</small>`;
+                    } else {
+                        btn.className = 'book-btn';
+                        btn.innerText = "▶ " + opt.label;
+                        btn.onclick = () => handleChoice(opt.target_id, opt.label, scene);
+                    }
+                    area.appendChild(btn);
+                });
+            } else {
+                const btn = document.createElement('div');
+                btn.className = 'book-btn';
+                btn.innerText = "完 (タイトルへ)";
+                btn.onclick = () => location.reload();
+                area.appendChild(btn);
+            }
+        }
+
+        window.handleChoice = async (nextId, userAction, currentScene) => {
+            const nextScene = window.scenarioData.events.find(e => e.id === nextId);
+            const area = document.getElementById('choices-area');
+            
+            window.lastTurnState = {
+                sceneId: currentScene.id,
+                inventory: new Set(window.inventory)
+            };
+            updateBackBtnState();
+
+            area.innerHTML = '<div style="color:#8d6e63; font-style:italic; padding:10px;">物語を紡いでいます...</div>';
+            addLog(`あなた: ${userAction}`, 'user');
+
+            const gmInstruction = window.scenarioData.global_settings?.ai_instruction || "あなたはGMです。";
+            const invStr = Array.from(window.inventory).join(", ");
+            const prompt = `${gmInstruction}\n【所持品】${invStr}\n【状況】${currentScene.text}\n【行動】${userAction}\n【結果】${nextScene.text}\n行動から結果までの過程を150文字以内の小説で描写せよ。`;
+
+            try {
+                const result = await window.model.generateContent(prompt);
+                const response = await result.response;
+                const text = response.text();
+                
+                const tokens = response.usageMetadata ? response.usageMetadata.totalTokenCount : 0;
+                updateStats(tokens);
+                
+                addLog(text, 'ai');
+                if(tokens > 0) addLog(`(消費: ${tokens} tokens)`, 'usage');
+
+                setTimeout(() => loadScene(nextId), 2000);
+            } catch (error) {
+                console.error(error);
+                addLog("エラー: AI接続失敗。移動します。", 'system');
+                setTimeout(() => loadScene(nextId), 2000);
+            }
+        };
+
+        const getDailyStats = () => {
+            const s = JSON.parse(localStorage.getItem('gemini_game_stats') || '{"count":0, "date":""}');
+            const today = new Date().toLocaleDateString();
+            if(s.date !== today) { s.date = today; s.count = 0; }
+            return s;
+        };
+
+        function updateStats(newTokens) {
+            const s = getDailyStats();
+            if(newTokens !== 0 || s.count === 0) {
+                s.count++;
+                localStorage.setItem('gemini_game_stats', JSON.stringify(s));
+            }
+            if(newTokens !== 0) requestHistory.push({t: Date.now(), k: newTokens});
+            const now = Date.now();
+            requestHistory = requestHistory.filter(r => now - r.t < 60000);
+
+            const rpm = requestHistory.length;
+            const tpm = requestHistory.reduce((sum, r) => sum + r.k, 0);
+            const rpd = s.count;
+
+            setStatDisplay('rpm', rpm, LIMITS.RPM);
+            setStatDisplay('tpm', tpm, LIMITS.TPM, true);
+            setStatDisplay('rpd', rpd, LIMITS.RPD);
+        }
+        
+        function setStatDisplay(id, val, limit, isToken = false) {
+            const el = document.getElementById(`stat-${id}`);
+            let valStr = val;
+            let limitStr = limit;
+            if(isToken) {
+                valStr = (val >= 1000) ? (val/1000).toFixed(1) + "k" : val;
+                limitStr = (limit >= 1000000) ? (limit/1000000) + "M" : limit;
+            }
+            el.innerText = `${valStr}/${limitStr}`;
+            el.className = '';
+            if (val >= limit) el.classList.add('limit-danger');
+            else if (val >= limit * 0.8) el.classList.add('limit-warn');
+        }
+        setInterval(() => updateStats(0), 1000);
+
+        window.saveProgress = () => {
+             if (!window.currentSceneId) return;
+             const now = new Date();
+             const ts = now.toISOString().replace(/[:.]/g, '-').slice(0,19);
+             const fname = `${window.cassetteFileName.replace('.json','')}_${ts}.json`;
+             const data = {
+                 cassetteFileName: window.cassetteFileName,
+                 date: now.toLocaleString(),
+                 currentSceneId: window.currentSceneId,
+                 inventory: Array.from(window.inventory),
+                 backUsed: window.backUsed,
+                 lastTurnState: window.lastTurnState
+             };
+             const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+             const a = document.createElement('a');
+             a.href = URL.createObjectURL(blob);
+             a.download = fname;
+             a.click();
+        };
+
+        window.executeBack = () => {
+            if (!window.lastTurnState || window.backUsed) return;
+            if(!confirm("1回のみ戻れます。実行しますか？")) return;
+            const prev = window.lastTurnState;
+            window.inventory = prev.inventory;
+            window.backUsed = true;
+            updateInventoryUI();
+            updateBackBtnState();
+            addLog("--- 時を戻しました ---", 'system');
+            loadScene(prev.sceneId);
+        };
+
+        function updateBackBtnState() {
+            const btn = document.getElementById('btn-back');
+            if (window.lastTurnState && !window.backUsed) {
+                btn.classList.remove('disabled');
+            } else {
+                btn.classList.add('disabled');
+            }
+        }
+
+        window.updateInventoryUI = () => {
+            const list = document.getElementById('inventory-list');
+            list.innerHTML = window.inventory.size ? "" : "なし";
+            window.inventory.forEach(item => {
+                const span = document.createElement('span');
+                span.className = 'inventory-tag';
+                span.innerText = item;
+                list.appendChild(span);
+            });
+        };
+
+        function addLog(text, type) {
+            const div = document.createElement('div');
+            div.className = `log-entry log-${type}`;
+            div.innerHTML = text.replace(/\n/g, '<br>');
+            const area = document.getElementById('chat-log-area');
+            area.appendChild(div);
+            area.scrollTop = area.scrollHeight;
+        }
+    </script>
+</body>
+</html>

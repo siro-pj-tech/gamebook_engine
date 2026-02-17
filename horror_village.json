@@ -1,0 +1,178 @@
+{
+  "cartridge_info": {
+    "title": "蝉時雨の忌み村",
+    "genre": "J-Horror",
+    "author": "AI Game Master",
+    "description": "地図から消された村。日が暮れるまでに脱出しなければ、二度と帰れない。",
+    "version": "1.0"
+  },
+  "global_settings": {
+    "atmosphere": "湿度が高く、まとわりつくような暑さ。遠くでヒグラシが鳴いている。不気味な視線を感じる。",
+    "ai_instruction": "あなたはホラーゲームのGMです。プレイヤーの入力を受け、次のイベントIDへの繋ぎを描写してください。不安を煽る表現、生理的な嫌悪感、日本の怪談のような湿っぽい恐怖を演出してください。"
+  },
+  "events": [
+    {
+      "id": 1,
+      "type": "start",
+      "title": "見知らぬバス停",
+      "text": "目が覚めると、バスは終点に止まっていた。錆びついたバス停には『黄昏鳴（たそがれなき）』とだけ書かれている。運転手の姿はない。強烈な蝉の声が耳鳴りのように響いている。",
+      "image_prompt": "old rusted bus stop in japanese countryside, summer afternoon, strong sunlight, ominous atmosphere, anime style background",
+      "next_options": [
+        {"target_id": 2, "label": "辺りを調べる"},
+        {"target_id": 5, "label": "山道を進む"}
+      ]
+    },
+    {
+      "id": 2,
+      "type": "normal",
+      "title": "放置された時刻表",
+      "text": "時刻表を見るが、文字は風化して読めない。ただ、赤字で殴り書きされた『日没後は外出禁止』という文字だけが不自然に新しく見えた。",
+      "image_prompt": "weathered bus schedule board, japanese text scratches, creepy vibe",
+      "next_options": [
+        {"target_id": 5, "label": "山道を進む"}
+      ]
+    },
+    {
+      "id": 5,
+      "type": "normal",
+      "title": "村の入り口",
+      "text": "鬱蒼とした木々のトンネルを抜けると、古びた日本家屋が立ち並ぶ集落が現れた。人の気配は全くないが、どの家も軒先に『赤い風車』が回っている。",
+      "image_prompt": "abandoned japanese village entrance, many red pinwheels spinning, eerie silence, overcast sky",
+      "next_options": [
+        {"target_id": 10, "label": "一番手前の家に入る"},
+        {"target_id": 20, "label": "村の奥へ進む"}
+      ]
+    },
+    {
+      "id": 10,
+      "type": "search",
+      "title": "無人の民家",
+      "text": "玄関の引き戸は鍵がかかっていない。中は生活感が残ったままだ。ちゃぶ台の上には、腐った食事がそのまま置かれている。まるで、ついさっきまで住人がいたかのようだ。",
+      "image_prompt": "inside abandoned old japanese house, tatami room, rotten food on table, dark shadows",
+      "next_options": [
+        {"target_id": 11, "label": "奥の間を調べる"},
+        {"target_id": 20, "label": "外に出る"}
+      ]
+    },
+    {
+      "id": 11,
+      "type": "event",
+      "title": "仏壇の影",
+      "text": "奥の間には大きな仏壇がある。位牌には名前がなく、代わりに『生贄』とだけ掘られている気がした。背後で、畳を踏むような音が聞こえた。",
+      "image_prompt": "creepy buddhist altar in dark room, candles unlit, scary atmosphere",
+      "next_options": [
+        {"target_id": 20, "label": "慌てて外に出る"}
+      ]
+    },
+    {
+      "id": 20,
+      "type": "normal",
+      "title": "村の広場",
+      "text": "村の中心に、古びた井戸がある。井戸の周りには、泥だらけの地蔵がいくつも並んでおり、全て首から上が欠けている。",
+      "image_prompt": "old village square, ancient well, headless jizo statues, twilight approaching",
+      "next_options": [
+        {"target_id": 25, "label": "井戸の中を覗く"},
+        {"target_id": 30, "label": "さらに奥の神社へ"}
+      ]
+    },
+    {
+      "id": 25,
+      "type": "scare",
+      "title": "井戸の底",
+      "text": "井戸の底は暗くて見えない。小石を落としてみる。……音がしない。代わりに、底の方から『オイデ』という子供の声が反響して聞こえた。",
+      "image_prompt": "looking down a dark deep well, scary perspective, darkness",
+      "next_options": [
+        {"target_id": 30, "label": "恐怖を感じて神社へ走る"}
+      ]
+    },
+    {
+      "id": 30,
+      "type": "checkpoint",
+      "title": "朽ちた神社",
+      "text": "石段を登りきると、ボロボロの神社があった。境内の地面には、チョークのようなもので奇妙な魔法陣……いや、子供の落書きのようなものが描かれている。日が暮れ始めてきた。",
+      "image_prompt": "dilapidated japanese shinto shrine, dusk, eerie symbols on ground, crows flying",
+      "next_options": [
+        {"target_id": 40, "label": "社務所を探す"},
+        {"target_id": 50, "label": "本殿の扉を開ける"}
+      ]
+    },
+    {
+      "id": 40,
+      "type": "item_get",
+      "title": "社務所の古文書",
+      "text": "社務所の日誌を見つけた。『儀式は失敗した。ナニカが漏れ出した。鈴の音を聞いたら、決して振り返ってはならない』と記されている。",
+      "item": "古びた日誌",
+      "image_prompt": "old diary open on wooden desk, japanese vertical writing, horror clue",
+      "next_options": [
+        {"target_id": 50, "label": "本殿へ向かう"}
+      ]
+    },
+    {
+      "id": 50,
+      "type": "climax_start",
+      "title": "逢魔が時",
+      "text": "突然、村中にサイレンのような音が鳴り響く。いや、これは数千匹の蝉の悲鳴だ。日が沈み、あたりは急速に闇に包まれる。遠くから『シャン……シャン……』という鈴の音が近づいてくる。",
+      "image_prompt": "village at night, total darkness, red ambient light, scary silhouette in distance",
+      "next_options": [
+        {"target_id": 60, "label": "物陰に隠れる"},
+        {"target_id": 70, "label": "村の出口へ走る"}
+      ]
+    },
+    {
+      "id": 60,
+      "type": "hiding",
+      "title": "床下の恐怖",
+      "text": "床下に潜り込み、息を殺す。鈴の音が目の前を通り過ぎる。隙間から見えたのは、泥にまみれた白い着物の足だった。足は不自然な方向に関節が曲がっている。",
+      "image_prompt": "view from under floorboards, monster feet walking by, horror suspense",
+      "next_options": [
+        {"target_id": 80, "label": "音が遠ざかるのを待って移動"}
+      ]
+    },
+    {
+      "id": 70,
+      "type": "chase",
+      "title": "追跡者",
+      "text": "出口へ走る背後から、人間とは思えない速度で何かが這い寄ってくる音がする。「ミツケタ、ミツケタ、ミツケタ！」狂ったような笑い声が耳元で聞こえた。",
+      "image_prompt": "blur motion, running through dark forest, scary face looking from behind tree",
+      "next_options": [
+        {"target_id": 99, "label": "振り向く"},
+        {"target_id": 80, "label": "振り返らずに走り続ける"}
+      ]
+    },
+    {
+      "id": 80,
+      "type": "choice",
+      "title": "運命の分かれ道",
+      "text": "村の入り口まであと少しだ。しかし、バス停のあった場所には、今は巨大な『黒い影』が立ち塞がっている。脇道には、入ってきた時は気づかなかった小さなトンネルがある。",
+      "image_prompt": "two paths in darkness, one blocked by giant shadow monster, one is dark tunnel",
+      "next_options": [
+        {"target_id": 100, "label": "トンネルへ逃げ込む"},
+        {"target_id": 98, "label": "影を突破する"}
+      ]
+    },
+    {
+      "id": 98,
+      "type": "bad_end",
+      "title": "Bad End: 取り込み",
+      "text": "影に突っ込んだ瞬間、体が動かなくなる。影の中には無数の人の顔が浮かんでいた。「オマエモ、ココニイルンダ」……あなたの意識は闇に溶けていった。",
+      "image_prompt": "abstract horror art, faces melting into darkness, game over screen",
+      "next_options": []
+    },
+    {
+      "id": 99,
+      "type": "bad_end",
+      "title": "Bad End: 禁忌",
+      "text": "振り返ってしまったあなたの目に映ったのは、この世のものとは思えない『顔』だった。理性が弾け飛ぶ音がした。あなたは永遠にこの村の住人となる。",
+      "image_prompt": "extreme close up of scary eye, glitch effect, horror ending",
+      "next_options": []
+    },
+    {
+      "id": 100,
+      "type": "good_end",
+      "title": "Good End: 現世への帰還",
+      "text": "トンネルを抜け、光の方へ無我夢中で走る。気がつくと、元のバス停のベンチで汗だくになって座っていた。夢だったのか？ふと手を見ると、あの社務所で見た日誌を握りしめていた。",
+      "image_prompt": "morning sunlight at bus stop, peaceful but mysterious, item in hand",
+      "next_options": []
+    }
+  ]
+}
