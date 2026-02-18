@@ -2,8 +2,8 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI GameBook Engine v1.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI GameBook Engine v1.1</title>
     <style>
         /* =========================================
            基本設定 & 背景
@@ -15,7 +15,7 @@
             font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
             color: #2c1a12; 
             height: 100vh; 
-            overflow: hidden;
+            overflow: hidden; /* 全体のスクロールは禁止し、内部でスクロールさせる */
             display: flex;
             flex-direction: column;
         }
@@ -31,35 +31,37 @@
 
         /* ヘッダー */
         #header-bar {
-            height: 60px;
+            height: 50px; /* 少し高さを減らす */
             display: flex;
             align-items: center;
-            padding: 0 20px;
-            background: rgba(0,0,0,0.6); 
+            padding: 0 15px;
+            background: rgba(0,0,0,0.7); 
             color: #f0e68c;
             text-shadow: 2px 2px 4px #000;
-            font-size: 1.4em;
+            font-size: 1.2em;
             font-weight: bold;
             z-index: 10;
             border-bottom: 1px solid #5d4037;
+            flex-shrink: 0; /* 縮まないようにする */
         }
 
         /* 本の本体 (マスクエリア) */
         #book-wrapper {
-            flex: 1;
+            flex: 1; /* 残りの高さを全て使う */
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
             overflow: hidden;
+            position: relative;
         }
 
         #book-spread {
             display: flex;
             width: 95%;
             max-width: 1200px;
-            height: 90%;
-            background-color: rgba(250, 245, 235, 0.92); /* 紙のクリーム色 */
+            height: 95%; /* 画面いっぱい使う */
+            background-color: rgba(250, 245, 235, 0.95);
             box-shadow: 
                 0 0 20px rgba(0,0,0,0.5), 
                 inset 0 0 50px rgba(139, 69, 19, 0.1); 
@@ -72,86 +74,87 @@
             width: 2px;
             background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.2), transparent);
             height: 100%;
+            flex-shrink: 0;
         }
 
         .page {
             flex: 1;
-            padding: 30px;
+            padding: 20px;
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            overflow: hidden;
+            gap: 10px;
+            overflow-y: auto; /* ページ内でスクロール許可 */
             position: relative;
+            /* スクロールバー装飾 */
+            scrollbar-width: thin;
+            scrollbar-color: #8d6e63 transparent;
         }
 
-        /* 左ページ */
+        /* 左ページ要素 */
         #scene-visual {
             width: 100%;
-            height: 40%;
+            height: 35%; /* 高さを％指定 */
+            min-height: 150px;
             background-color: #d7ccc8;
             border: 2px solid #5d4037;
             object-fit: cover;
             border-radius: 2px;
             filter: sepia(0.3);
+            flex-shrink: 0;
         }
 
         #scene-text-area {
             flex-grow: 1;
             overflow-y: auto;
-            font-size: 1.25em;
-            line-height: 1.8;
+            font-size: 1.1em;
+            line-height: 1.7;
             border-bottom: 1px dashed #8d6e63;
             padding-bottom: 10px;
-            scrollbar-width: thin;
-            scrollbar-color: #8d6e63 transparent;
+            min-height: 100px; /* スマホで潰れないように */
         }
 
         #inventory-area {
-            height: auto;
-            min-height: 40px;
+            flex-shrink: 0;
+            min-height: 30px;
             font-size: 0.9em;
             color: #5d4037;
-            background: rgba(0,0,0,0.03);
-            padding: 8px;
+            background: rgba(0,0,0,0.05);
+            padding: 5px;
             border-radius: 4px;
         }
         .inventory-tag {
             display: inline-block;
             background: #fff;
             border: 1px solid #8d6e63;
-            padding: 2px 8px;
+            padding: 2px 6px;
             margin: 2px;
-            border-radius: 12px;
-            font-size: 0.85em;
-            box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            font-size: 0.8em;
         }
 
-        /* 右ページ */
+        /* 右ページ要素 */
         #chat-log-area {
             flex-grow: 1;
-            height: 60%;
             overflow-y: auto;
-            font-size: 1.1em;
+            font-size: 1em;
             line-height: 1.6;
-            padding-right: 10px;
-            background: rgba(255,255,255,0.4);
-            border-radius: 4px;
             padding: 10px;
-            scrollbar-width: thin;
-            scrollbar-color: #8d6e63 transparent;
+            background: rgba(255,255,255,0.5);
+            border-radius: 4px;
+            min-height: 150px; /* スマホで潰れないように */
         }
-        .log-entry { margin-bottom: 15px; border-bottom: 1px solid rgba(93, 64, 55, 0.2); padding-bottom: 10px; }
+        .log-entry { margin-bottom: 10px; border-bottom: 1px solid rgba(93, 64, 55, 0.2); padding-bottom: 8px; }
         .log-ai { color: #2c1a12; }
         .log-user { color: #1565c0; font-style: italic; font-weight: bold; }
-        .log-system { color: #757575; font-size: 0.85em; }
-        .log-usage { font-size: 0.75em; color: #aaa; text-align: right; margin-top: -5px; }
+        .log-system { color: #757575; font-size: 0.8em; }
+        .log-usage { font-size: 0.7em; color: #aaa; text-align: right; margin-top: -4px; }
 
         #choices-area {
-            min-height: 30%;
+            flex-shrink: 0; /* 縮小禁止 */
+            min-height: auto;
             display: flex;
             flex-direction: column;
             gap: 8px;
-            justify-content: flex-end;
             padding-top: 10px;
             border-top: 1px solid #8d6e63;
         }
@@ -159,104 +162,149 @@
         .book-btn {
             background: #fff;
             border: 1px solid #5d4037;
-            padding: 12px 15px;
+            padding: 12px;
             text-align: left;
             cursor: pointer;
             font-family: "Yu Mincho", serif;
             font-weight: bold;
             color: #3e2723;
             box-shadow: 2px 2px 0px rgba(93, 64, 55, 0.2);
-            transition: all 0.1s;
+            font-size: 0.95em;
         }
-        .book-btn:hover {
-            background: #efebe9;
-            transform: translateY(-1px);
-            box-shadow: 2px 3px 2px rgba(93, 64, 55, 0.3);
-        }
-        .book-btn:active { transform: translateY(1px); box-shadow: none; }
-        .book-btn.disabled { opacity: 0.6; cursor: not-allowed; background: #d7ccc8; }
+        .book-btn:active { background: #efebe9; transform: translateY(1px); }
+        .book-btn.disabled { opacity: 0.6; background: #d7ccc8; }
 
         /* フッター */
         #footer-bar {
-            height: 50px;
-            background: rgba(30, 20, 10, 0.85);
+            background: rgba(30, 20, 10, 0.95);
             color: #ccc;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 20px;
-            font-size: 0.85em;
+            padding: 5px 10px;
+            font-size: 0.8em;
             border-top: 1px solid #5d4037;
+            flex-shrink: 0;
+            min-height: 50px;
+            flex-wrap: wrap; /* スマホで折り返し許可 */
         }
 
         #stats-monitor {
             font-family: "Consolas", monospace;
             display: flex;
-            gap: 15px;
+            gap: 10px;
         }
         .stat-item { color: #81c784; }
-        .stat-label { color: #aaa; margin-right: 4px; }
         .limit-warn { color: #ffeb3b; }
         .limit-danger { color: #ff5252; font-weight: bold; }
+
+        .footer-controls {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-left: auto; /* 右寄せ */
+        }
 
         .system-btn {
             background: #4e342e;
             color: #fff;
             border: 1px solid #6d4c41;
-            padding: 5px 12px;
+            padding: 6px 10px;
             cursor: pointer;
             border-radius: 3px;
             font-size: 0.9em;
-            margin-left: 10px;
+            white-space: nowrap;
         }
-        .system-btn:hover { background: #6d4c41; }
-        .system-btn.disabled { opacity: 0.5; cursor: not-allowed; }
 
         /* モーダル */
         #config-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 999;
+            background: rgba(0,0,0,0.9); z-index: 999;
             display: flex; justify-content: center; align-items: center;
+            overflow-y: auto; /* スマホで縦にはみ出たとき用 */
         }
         .modal-box {
             background: #fffaf0; color: #3e2723;
-            padding: 30px; border-radius: 4px; border: 4px double #5d4037;
-            width: 450px; max-width: 90%;
+            padding: 20px; border-radius: 4px; border: 4px double #5d4037;
+            width: 90%; max-width: 450px;
             box-shadow: 0 0 20px rgba(0,0,0,0.8);
             position: relative;
         }
-        
-        /* ▼▼▼ 追加：APIキー入力欄周りのスタイル ▼▼▼ */
-        .api-input-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 5px 0 15px;
-        }
-        .api-input-group input { margin: 0; }
-        .help-btn {
-            width: 30px; height: 30px;
-            border-radius: 50%;
-            background: #8d6e63; color: white;
-            border: none; cursor: pointer;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-        .help-box {
-            display: none;
-            background: #efebe9;
-            border: 1px solid #8d6e63;
-            padding: 10px;
-            font-size: 0.85em;
-            margin-bottom: 15px;
-            border-radius: 4px;
-            line-height: 1.5;
-        }
-        .help-box a { color: #1565c0; }
+        .api-input-group { display: flex; align-items: center; gap: 5px; margin: 5px 0 15px; }
+        .help-btn { width: 30px; height: 30px; background: #8d6e63; color: white; border: none; border-radius: 50%; }
+        .help-box { display: none; background: #efebe9; padding: 10px; margin-bottom: 15px; font-size: 0.85em; }
+        input, select { padding: 10px; border: 1px solid #8d6e63; background: #fff; width: 100%; box-sizing: border-box; }
 
-        input { padding: 10px; border: 1px solid #8d6e63; background: #fff; width: 100%; box-sizing: border-box; }
-        h2 { text-align: center; margin-top: 0; border-bottom: 2px solid #8d6e63; padding-bottom: 10px; }
+        /* =========================================
+           ★ スマホ用レスポンシブ設定 (重要)
+           ========================================= */
+        @media screen and (max-width: 768px) {
+            /* 本の形状を解除し、縦長スクロールにする */
+            #book-wrapper {
+                padding: 5px;
+                display: block; /* Flex解除 */
+                overflow-y: auto; /* 縦スクロール許可 */
+            }
 
+            #book-spread {
+                flex-direction: column; /* 上下配置 */
+                width: 100%;
+                height: auto; /* 高さは中身に合わせる */
+                min-height: 100%;
+                box-shadow: none; /* スマホでは影を減らす */
+                border: none;
+                background-color: transparent; /* 背景透過してページごとの背景にする */
+            }
+
+            #book-spine { display: none; } /* 背表紙を消す */
+
+            .page {
+                background-color: rgba(250, 245, 235, 0.95); /* ページごとに紙色をつける */
+                margin-bottom: 10px;
+                border-radius: 4px;
+                border: 1px solid #8d6e63;
+                flex: none; /* 伸縮解除 */
+                height: auto;
+                padding: 15px;
+            }
+
+            /* 左ページ（上部） */
+            #scene-visual {
+                height: 200px; /* 固定高さ */
+            }
+            #scene-text-area {
+                font-size: 1em; /* 文字少し小さく */
+                max-height: 200px; /* 長すぎるとスクロール */
+            }
+
+            /* 右ページ（下部） */
+            #chat-log-area {
+                height: 200px; /* ログの高さ制限 */
+            }
+
+            /* フッター調整 */
+            #footer-bar {
+                flex-direction: column; /* 縦並び */
+                gap: 5px;
+                padding: 8px;
+                height: auto;
+            }
+            #stats-monitor {
+                width: 100%;
+                justify-content: space-around;
+                font-size: 0.7em;
+                border-bottom: 1px solid #444;
+                padding-bottom: 5px;
+                margin-bottom: 5px;
+            }
+            .footer-controls {
+                width: 100%;
+                justify-content: space-between;
+                margin: 0;
+            }
+            /* スライダーを少し小さく */
+            input[type="range"] { width: 80px; }
+        }
     </style>
     <script type="importmap">
       { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
@@ -266,7 +314,7 @@
 
     <div id="config-modal">
         <div class="modal-box">
-            <h2>AI GameBook Engine v1.0</h2>
+            <h2>AI GameBook Engine v1.1</h2>
             
             <label>1. Gemini API Key</label>
             <div class="api-input-group">
@@ -276,35 +324,29 @@
             
             <div id="help-text" class="help-box">
                 <strong>【APIキーの取得方法】</strong><br>
-                1. <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> にアクセス<br>
-                2. Googleアカウントでログイン<br>
-                3. 「Create API key」をクリック<br>
-                4. キーをコピーしてここに貼り付け<br>
-                ※ 利用は無料枠の範囲内で行われます
+                1. <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> へ<br>
+                2. 「Create API key」をクリック<br>
+                3. キーをコピーして貼り付け<br>
             </div>
 
-            <label>2. 冒険の書 (JSONファイル)</label>
-
-	<select id="preset-select" style="padding:10px; width:100%; margin-bottom:10px; background:#fff; border:1px solid #8d6e63;">
-        	<option value="">(収録タイトルを選択する場合はこちら)</option>
-        	<option value="horror_village.json">サンプル冒険：蝉時雨の忌み村</option>
-	</select>
-
+            <label>2. 冒険の書を選ぶ</label>
+            <select id="preset-select" style="margin-bottom:10px;">
+                <option value="">(収録タイトルを選択)</option>
+                <option value="horror_village.json">ホラー：蝉時雨の忌み村</option>
+            </select>
             <input type="file" id="json-file" accept=".json" onchange="document.getElementById('preset-select').value=''">
             
-            <button class="book-btn" onclick="startNewGame()" style="width:100%; text-align:center; background:#8d6e63; color:white;">物語を始める</button>
+            <button class="book-btn" onclick="startNewGame()" style="width:100%; text-align:center; background:#8d6e63; color:white; margin-top:10px;">物語を始める</button>
             <div style="text-align:center; margin:10px; color:#888;">または</div>
             
             <input type="file" id="save-file" accept=".json" style="display:none" onchange="loadSaveGame(this)">
             <button class="book-btn" onclick="checkAndLoadSave()" style="width:100%; text-align:center; background:#d7ccc8;">しおりから再開</button>
             
             <div id="error-message" style="color:#d32f2f; margin-top:10px; font-size:0.9em; text-align:center; font-weight:bold;"></div>
-		<div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #8d6e63; text-align: center; font-size: 0.9em;">
-		    <p style="margin-bottom: 5px;">自分だけの冒険を作ってみる？</p>
-		    <a href="editor.html" target="_blank" style="color: #5d4037; font-weight: bold; text-decoration: none; border-bottom: 1px solid #5d4037;">
-        ✒️ 冒険の書エディターを開く
-		    </a>
-		</div>
+            
+            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #8d6e63; text-align: center; font-size: 0.9em;">
+                <a href="editor.html" target="_blank" style="color: #5d4037; font-weight: bold;">✒️ カセットエディターを開く</a>
+            </div>
         </div>
     </div>
 
@@ -337,15 +379,15 @@
 
         <div id="footer-bar">
             <div id="stats-monitor">
-                <span class="stat-item"><span class="stat-label">RPM:</span><span id="stat-rpm">0/15</span></span>
-                <span class="stat-item"><span class="stat-label">TPM:</span><span id="stat-tpm">0/1M</span></span>
-                <span class="stat-item"><span class="stat-label">RPD:</span><span id="stat-rpd">0/1500</span></span>
+                <span class="stat-item">RPM:<span id="stat-rpm">0/15</span></span>
+                <span class="stat-item">TPM:<span id="stat-tpm">0/1M</span></span>
+                <span class="stat-item">RPD:<span id="stat-rpd">0/1500</span></span>
             </div>
 
-            <div style="display:flex; align-items:center;">
-                <span style="margin-right:5px;">文字:</span>
-                <input type="range" min="14" max="24" value="18" oninput="changeFontSize(this.value)" style="width:60px; margin:0;">
-                <button class="system-btn" onclick="saveProgress()">💾 中断</button>
+            <div class="footer-controls">
+                <span style="font-size:0.8em;">文字:</span>
+                <input type="range" min="12" max="24" value="16" oninput="changeFontSize(this.value)">
+                <button class="system-btn" onclick="saveProgress()">💾 保存</button>
                 <button id="btn-back" class="system-btn" onclick="executeBack()">↩️ 戻る</button>
             </div>
         </div>
@@ -371,7 +413,6 @@
             updateStats(0);
         };
 
-        // ▼▼▼ 追加：ヘルプ表示切り替え ▼▼▼
         window.toggleHelp = () => {
             const el = document.getElementById('help-text');
             el.style.display = (el.style.display === 'block') ? 'none' : 'block';
@@ -382,72 +423,56 @@
             document.getElementById('chat-log-area').style.fontSize = size + "px";
         };
 
-	// prepareGame関数をこれに置き換えてください
-	async function prepareGame() {
-	    const apiKey = document.getElementById('api-key').value;
-	    const fileInput = document.getElementById('json-file');
-	    const presetSelect = document.getElementById('preset-select');
-	    const errorMsg = document.getElementById('error-message');
+        async function prepareGame() {
+            const apiKey = document.getElementById('api-key').value;
+            const fileInput = document.getElementById('json-file');
+            const presetSelect = document.getElementById('preset-select');
+            const errorMsg = document.getElementById('error-message');
 
-	    if (!apiKey) { errorMsg.innerText = "APIキーを入力してください"; return false; }
+            if (!apiKey) { errorMsg.innerText = "APIキーを入力してください"; return false; }
+            localStorage.setItem('gemini_api_key', apiKey);
+            
+            try {
+                window.genAI = new GoogleGenerativeAI(apiKey);
+                window.model = window.genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); 
+            } catch(e) {
+                errorMsg.innerText = "モデル初期化エラー: " + e;
+                return false;
+            }
 
-	    localStorage.setItem('gemini_api_key', apiKey);
-    
-	    try {
-	        window.genAI = new GoogleGenerativeAI(apiKey);
-	        window.model = window.genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); 
-	    } catch(e) {
-	        errorMsg.innerText = "モデル初期化エラー: " + e;
-	        return false;
-	    }
+            if (fileInput.files.length > 0) {
+                window.cassetteFileName = fileInput.files[0].name;
+                return new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            window.scenarioData = JSON.parse(e.target.result);
+                            applyTitle();
+                            resolve(true);
+                        } catch (err) { errorMsg.innerText = "JSON読込エラー: " + err; resolve(false); }
+                    };
+                    reader.readAsText(fileInput.files[0]);
+                });
+            } else if (presetSelect.value) {
+                window.cassetteFileName = presetSelect.value;
+                try {
+                    const response = await fetch(presetSelect.value);
+                    if (!response.ok) throw new Error("File not found");
+                    window.scenarioData = await response.json();
+                    applyTitle();
+                    return true;
+                } catch (err) { errorMsg.innerText = "プリセット読込エラー: " + err; return false; }
+            } else {
+                errorMsg.innerText = "「冒険の書」を選択してください";
+                return false;
+            }
+        }
 
-	    // ▼▼▼ ここが変更点：ファイル読み込みロジック ▼▼▼
-    
-	    // A. ユーザーがローカルファイルを選択している場合
-	    if (fileInput.files.length > 0) {
-	        window.cassetteFileName = fileInput.files[0].name;
-	        return new Promise((resolve) => {
-	            const reader = new FileReader();
-	            reader.onload = (e) => {
-	                try {
-	                    window.scenarioData = JSON.parse(e.target.result);
-	                    const title = window.scenarioData.cartridge_info?.title || "Unknown Adventure";
-	                    document.title = title;
-	                    document.getElementById('game-title').innerText = title;
-	                    resolve(true);
-	                } catch (err) {
-	                    errorMsg.innerText = "JSON読込エラー: " + err; resolve(false);
-	                }
-	            };
-	            reader.readAsText(fileInput.files[0]);
-	        });
-	    } 
-	    // B. プリセット（サーバー上のファイル）が選ばれている場合
-	    else if (presetSelect.value) {
-	        const fileName = presetSelect.value; // "sample.json" など
-	        window.cassetteFileName = fileName;
-	        
-	        try {
-	            // fetchを使ってサーバー（GitHubなど）からJSONを取得
-	            const response = await fetch(fileName);
-	            if (!response.ok) throw new Error("File not found");
-	            
-	            window.scenarioData = await response.json();
-	            const title = window.scenarioData.cartridge_info?.title || "Unknown Adventure";
-	            document.title = title;
-	            document.getElementById('game-title').innerText = title;
-	            return true;
-	        } catch (err) {
-	            errorMsg.innerText = "プリセット読込エラー: " + err;
-	            return false;
-	        }
-	    }
-	    // C. どっちも選んでない場合
-	    else {
-	        errorMsg.innerText = "「冒険の書」を選択してください";
-	        return false;
-	    }
-	}
+        function applyTitle() {
+            const title = window.scenarioData.cartridge_info?.title || "Unknown Adventure";
+            document.title = title;
+            document.getElementById('game-title').innerText = title;
+        }
 
         window.startNewGame = async () => {
             if (!await prepareGame()) return;
@@ -461,11 +486,12 @@
         };
 
         window.checkAndLoadSave = () => {
-            const cassetteInput = document.getElementById('json-file');
+            const fileInput = document.getElementById('json-file');
+            const presetSelect = document.getElementById('preset-select');
             const errorMsg = document.getElementById('error-message');
             
-            if (cassetteInput.files.length === 0) {
-                errorMsg.innerText = "⚠️ 先に「冒険の書(JSON)」をセットしてください";
+            if (fileInput.files.length === 0 && !presetSelect.value) {
+                errorMsg.innerText = "⚠️ 先に「冒険の書」をセットしてください";
                 return;
             }
             errorMsg.innerText = "";
