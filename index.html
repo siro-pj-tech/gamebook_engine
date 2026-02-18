@@ -14,8 +14,10 @@
             background-size: cover; 
             font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
             color: #2c1a12; 
-            height: 100vh; 
-            overflow: hidden; /* 全体のスクロールは禁止し、内部でスクロールさせる */
+            /* ▼▼▼ スマホのアドレスバー対策 (dvh) ▼▼▼ */
+            height: 100vh;
+            height: 100dvh; 
+            overflow: hidden; 
             display: flex;
             flex-direction: column;
         }
@@ -31,7 +33,7 @@
 
         /* ヘッダー */
         #header-bar {
-            height: 50px; /* 少し高さを減らす */
+            height: 50px; 
             display: flex;
             align-items: center;
             padding: 0 15px;
@@ -42,12 +44,14 @@
             font-weight: bold;
             z-index: 10;
             border-bottom: 1px solid #5d4037;
-            flex-shrink: 0; /* 縮まないようにする */
+            flex-shrink: 0; 
         }
 
         /* 本の本体 (マスクエリア) */
         #book-wrapper {
-            flex: 1; /* 残りの高さを全て使う */
+            flex: 1; 
+            /* ▼▼▼ これが重要：フレックスボックス内で縮小を許可する ▼▼▼ */
+            min-height: 0; 
             display: flex;
             justify-content: center;
             align-items: center;
@@ -60,7 +64,7 @@
             display: flex;
             width: 95%;
             max-width: 1200px;
-            height: 95%; /* 画面いっぱい使う */
+            height: 95%; 
             background-color: rgba(250, 245, 235, 0.95);
             box-shadow: 
                 0 0 20px rgba(0,0,0,0.5), 
@@ -83,9 +87,8 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
-            overflow-y: auto; /* ページ内でスクロール許可 */
+            overflow-y: auto; 
             position: relative;
-            /* スクロールバー装飾 */
             scrollbar-width: thin;
             scrollbar-color: #8d6e63 transparent;
         }
@@ -93,7 +96,7 @@
         /* 左ページ要素 */
         #scene-visual {
             width: 100%;
-            height: 35%; /* 高さを％指定 */
+            height: 35%; 
             min-height: 150px;
             background-color: #d7ccc8;
             border: 2px solid #5d4037;
@@ -110,7 +113,7 @@
             line-height: 1.7;
             border-bottom: 1px dashed #8d6e63;
             padding-bottom: 10px;
-            min-height: 100px; /* スマホで潰れないように */
+            min-height: 80px; 
         }
 
         #inventory-area {
@@ -141,7 +144,7 @@
             padding: 10px;
             background: rgba(255,255,255,0.5);
             border-radius: 4px;
-            min-height: 150px; /* スマホで潰れないように */
+            min-height: 100px;
         }
         .log-entry { margin-bottom: 10px; border-bottom: 1px solid rgba(93, 64, 55, 0.2); padding-bottom: 8px; }
         .log-ai { color: #2c1a12; }
@@ -150,7 +153,7 @@
         .log-usage { font-size: 0.7em; color: #aaa; text-align: right; margin-top: -4px; }
 
         #choices-area {
-            flex-shrink: 0; /* 縮小禁止 */
+            flex-shrink: 0; 
             min-height: auto;
             display: flex;
             flex-direction: column;
@@ -184,15 +187,18 @@
             padding: 5px 10px;
             font-size: 0.8em;
             border-top: 1px solid #5d4037;
-            flex-shrink: 0;
-            min-height: 50px;
-            flex-wrap: wrap; /* スマホで折り返し許可 */
+            flex-shrink: 0; /* 縮小禁止 */
+            min-height: 50px; /* 最低保証 */
+            box-sizing: border-box;
+            /* 折り返し許可 */
+            flex-wrap: wrap; 
         }
 
         #stats-monitor {
             font-family: "Consolas", monospace;
             display: flex;
             gap: 10px;
+            align-items: center;
         }
         .stat-item { color: #81c784; }
         .limit-warn { color: #ffeb3b; }
@@ -201,15 +207,15 @@
         .footer-controls {
             display: flex;
             align-items: center;
-            gap: 5px;
-            margin-left: auto; /* 右寄せ */
+            gap: 8px;
+            margin-left: auto;
         }
 
         .system-btn {
             background: #4e342e;
             color: #fff;
             border: 1px solid #6d4c41;
-            padding: 6px 10px;
+            padding: 8px 12px;
             cursor: pointer;
             border-radius: 3px;
             font-size: 0.9em;
@@ -221,7 +227,7 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.9); z-index: 999;
             display: flex; justify-content: center; align-items: center;
-            overflow-y: auto; /* スマホで縦にはみ出たとき用 */
+            overflow-y: auto; 
         }
         .modal-box {
             background: #fffaf0; color: #3e2723;
@@ -236,73 +242,70 @@
         input, select { padding: 10px; border: 1px solid #8d6e63; background: #fff; width: 100%; box-sizing: border-box; }
 
         /* =========================================
-           ★ スマホ用レスポンシブ設定 (重要)
+           ★ スマホ用レスポンシブ設定 v1.2
            ========================================= */
         @media screen and (max-width: 768px) {
-            /* 本の形状を解除し、縦長スクロールにする */
-            #book-wrapper {
+            /* フッターの安全対策 */
+            #footer-bar {
+                flex-direction: column; /* 縦並び */
+                justify-content: center;
+                gap: 5px;
                 padding: 5px;
-                display: block; /* Flex解除 */
-                overflow-y: auto; /* 縦スクロール許可 */
+                height: auto; /* コンテンツに合わせて伸びる */
+                padding-bottom: env(safe-area-inset-bottom); /* iPhone X以降の下部バー対策 */
+            }
+
+            #stats-monitor {
+                width: 100%;
+                justify-content: center;
+                font-size: 0.7em;
+                border-bottom: 1px solid #555;
+                padding-bottom: 2px;
+            }
+
+            .footer-controls {
+                width: 100%;
+                justify-content: center; /* 中央揃え */
+                margin: 0;
+                padding-bottom: 2px;
+            }
+
+            /* 本の縦スクロール化 */
+            #book-wrapper {
+                padding: 0;
+                display: block; 
+                overflow-y: auto; 
+                -webkit-overflow-scrolling: touch; /* スクロール慣性 */
             }
 
             #book-spread {
-                flex-direction: column; /* 上下配置 */
+                flex-direction: column; 
                 width: 100%;
-                height: auto; /* 高さは中身に合わせる */
+                height: auto; 
                 min-height: 100%;
-                box-shadow: none; /* スマホでは影を減らす */
+                box-shadow: none; 
                 border: none;
-                background-color: transparent; /* 背景透過してページごとの背景にする */
+                background-color: transparent; 
             }
 
-            #book-spine { display: none; } /* 背表紙を消す */
+            #book-spine { display: none; } 
 
             .page {
-                background-color: rgba(250, 245, 235, 0.95); /* ページごとに紙色をつける */
-                margin-bottom: 10px;
-                border-radius: 4px;
-                border: 1px solid #8d6e63;
-                flex: none; /* 伸縮解除 */
+                background-color: rgba(250, 245, 235, 0.98); 
+                margin-bottom: 0;
+                border-radius: 0;
+                border-bottom: 2px solid #8d6e63;
+                flex: none; 
                 height: auto;
                 padding: 15px;
             }
 
-            /* 左ページ（上部） */
-            #scene-visual {
-                height: 200px; /* 固定高さ */
-            }
-            #scene-text-area {
-                font-size: 1em; /* 文字少し小さく */
-                max-height: 200px; /* 長すぎるとスクロール */
-            }
+            /* 各要素の高さ調整 */
+            #scene-visual { height: 180px; margin-bottom: 10px; }
+            #scene-text-area { font-size: 1em; max-height: none; min-height: auto; }
+            #chat-log-area { height: 180px; } /* ログは見やすく */
 
-            /* 右ページ（下部） */
-            #chat-log-area {
-                height: 200px; /* ログの高さ制限 */
-            }
-
-            /* フッター調整 */
-            #footer-bar {
-                flex-direction: column; /* 縦並び */
-                gap: 5px;
-                padding: 8px;
-                height: auto;
-            }
-            #stats-monitor {
-                width: 100%;
-                justify-content: space-around;
-                font-size: 0.7em;
-                border-bottom: 1px solid #444;
-                padding-bottom: 5px;
-                margin-bottom: 5px;
-            }
-            .footer-controls {
-                width: 100%;
-                justify-content: space-between;
-                margin: 0;
-            }
-            /* スライダーを少し小さく */
+            /* スライダー調整 */
             input[type="range"] { width: 80px; }
         }
     </style>
@@ -311,7 +314,6 @@
     </script>
 </head>
 <body>
-
     <div id="config-modal">
         <div class="modal-box">
             <h2>AI GameBook Engine v1.1</h2>
@@ -345,7 +347,7 @@
             <div id="error-message" style="color:#d32f2f; margin-top:10px; font-size:0.9em; text-align:center; font-weight:bold;"></div>
             
             <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #8d6e63; text-align: center; font-size: 0.9em;">
-                <a href="editor.html" target="_blank" style="color: #5d4037; font-weight: bold;">✒️ カセットエディターを開く</a>
+                <a href="editor.html" target="_blank" style="color: #5d4037; font-weight: bold;">✒️ 冒険の書エディターを開く</a>
             </div>
         </div>
     </div>
