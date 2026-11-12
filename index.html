@@ -3,342 +3,169 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>AI GameBook Engine v1.1</title>
+    <title>Web GameBook Engine v3.3</title>
     <style>
         /* =========================================
            基本設定 & 背景
            ========================================= */
         body { 
             margin: 0; padding: 0; 
-            background: url('bg_gamebooks.png') no-repeat center center fixed; 
+            background: url('bg_gamebooks.jpg') no-repeat center center fixed; 
             background-size: cover; 
             font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
             color: #2c1a12; 
-            /* ▼▼▼ スマホのアドレスバー対策 (dvh) ▼▼▼ */
-            height: 100vh;
-            height: 100dvh; 
-            overflow: hidden; 
-            display: flex;
-            flex-direction: column;
+            height: 100vh; height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
         }
 
-        #main-container {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            height: 100%;
-            position: relative;
-            box-sizing: border-box;
-        }
+        #main-container { display: flex; flex-direction: column; width: 100%; height: 100%; position: relative; box-sizing: border-box; }
 
-        /* ヘッダー */
         #header-bar {
-            height: 50px; 
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-            background: rgba(0,0,0,0.7); 
-            color: #f0e68c;
-            text-shadow: 2px 2px 4px #000;
-            font-size: 1.2em;
-            font-weight: bold;
-            z-index: 10;
-            border-bottom: 1px solid #5d4037;
-            flex-shrink: 0; 
+            height: 50px; display: flex; align-items: center; padding: 0 15px;
+            background: rgba(0,0,0,0.7); color: #f0e68c; text-shadow: 2px 2px 4px #000;
+            font-size: 1.2em; font-weight: bold; z-index: 10; border-bottom: 1px solid #5d4037; flex-shrink: 0; 
         }
 
-        /* 本の本体 (マスクエリア) */
         #book-wrapper {
-            flex: 1; 
-            /* ▼▼▼ これが重要：フレックスボックス内で縮小を許可する ▼▼▼ */
-            min-height: 0; 
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            overflow: hidden;
-            position: relative;
+            flex: 1; min-height: 0; display: flex; justify-content: center; align-items: center;
+            padding: 20px; overflow: hidden; position: relative;
         }
 
         #book-spread {
-            display: flex;
-            width: 95%;
-            max-width: 1200px;
-            height: 95%; 
+            display: flex; width: 95%; max-width: 1200px; height: 95%; 
             background-color: rgba(250, 245, 235, 0.95);
-            box-shadow: 
-                0 0 20px rgba(0,0,0,0.5), 
-                inset 0 0 50px rgba(139, 69, 19, 0.1); 
-            border-radius: 4px;
-            border: 1px solid #8d6e63;
-            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5), inset 0 0 50px rgba(139, 69, 19, 0.1); 
+            border-radius: 4px; border: 1px solid #8d6e63; position: relative;
         }
         
         #book-spine {
-            width: 2px;
-            background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.2), transparent);
-            height: 100%;
-            flex-shrink: 0;
+            width: 2px; background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.2), transparent);
+            height: 100%; flex-shrink: 0;
         }
 
         .page {
-            flex: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            overflow-y: auto; 
-            position: relative;
-            scrollbar-width: thin;
-            scrollbar-color: #8d6e63 transparent;
+            flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 10px;
+            overflow: hidden; position: relative; 
         }
 
-        /* 左ページ要素 */
+        #left-page { justify-content: space-between; }
+
         #scene-visual {
-            width: 100%;
-            height: 35%; 
-            min-height: 150px;
-            background-color: #d7ccc8;
-            border: 2px solid #5d4037;
-            object-fit: cover;
-            border-radius: 2px;
-            filter: sepia(0.3);
-            flex-shrink: 0;
-        }
-
-        #scene-text-area {
-            flex-grow: 1;
-            overflow-y: auto;
-            font-size: 1.1em;
-            line-height: 1.7;
-            border-bottom: 1px dashed #8d6e63;
-            padding-bottom: 10px;
-            min-height: 80px; 
+            width: 100%; flex-grow: 1; min-height: 200px; max-height: 50vh; 
+            background-color: #3e2723; border: 2px solid #5d4037; 
+            object-fit: contain; border-radius: 2px; filter: sepia(0.3); box-sizing: border-box;
         }
 
         #inventory-area {
-            flex-shrink: 0;
-            min-height: 30px;
-            font-size: 0.9em;
-            color: #5d4037;
-            background: rgba(0,0,0,0.05);
-            padding: 5px;
-            border-radius: 4px;
+            flex-shrink: 0; min-height: 40px; font-size: 0.9em; color: #5d4037;
+            background: rgba(0,0,0,0.05); padding: 8px; border-radius: 4px; border: 1px solid rgba(141, 110, 99, 0.3);
         }
         .inventory-tag {
-            display: inline-block;
-            background: #fff;
-            border: 1px solid #8d6e63;
-            padding: 2px 6px;
-            margin: 2px;
-            border-radius: 8px;
-            font-size: 0.8em;
+            display: inline-block; background: #fff; border: 1px solid #8d6e63;
+            padding: 2px 8px; margin: 2px; border-radius: 12px; font-size: 0.85em;
         }
 
-        /* 右ページ要素 */
-        #chat-log-area {
-            flex-grow: 1;
-            overflow-y: auto;
-            font-size: 1em;
-            line-height: 1.6;
-            padding: 10px;
-            background: rgba(255,255,255,0.5);
-            border-radius: 4px;
-            min-height: 100px;
+        #right-main-wrapper {
+            display: flex; flex-direction: row; flex-grow: 1; min-height: 0;
+            border-bottom: 1px dashed #8d6e63; padding-bottom: 10px; gap: 10px;
         }
+
+        #tab-content-area { flex-grow: 1; position: relative; overflow: hidden; }
+
+        #scene-text-area, #chat-log-area {
+            width: 100%; height: 100%; overflow-y: auto; font-size: 1.1em; line-height: 1.8;
+            padding-right: 10px; box-sizing: border-box; scrollbar-width: thin; scrollbar-color: #8d6e63 transparent;
+        }
+
         .log-entry { margin-bottom: 10px; border-bottom: 1px solid rgba(93, 64, 55, 0.2); padding-bottom: 8px; }
-        .log-ai { color: #2c1a12; }
-        .log-user { color: #1565c0; font-style: italic; font-weight: bold; }
-        .log-system { color: #757575; font-size: 0.8em; }
-        .log-usage { font-size: 0.7em; color: #aaa; text-align: right; margin-top: -4px; }
+        .log-system { color: #757575; font-size: 0.85em; }
+        .log-user { color: #2c1a12; font-weight: bold; }
 
-        #choices-area {
-            flex-shrink: 0; 
-            min-height: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding-top: 10px;
-            border-top: 1px solid #8d6e63;
+        #vertical-tabs {
+            width: 45px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;
+            border-left: 1px solid rgba(141, 110, 99, 0.4); padding-left: 8px;
         }
         
+        .tab-btn {
+            background: #efebe9; border: 1px solid #8d6e63; border-radius: 4px;
+            text-align: center; padding: 12px 0; cursor: pointer; font-size: 1.3em;
+            transition: all 0.2s; box-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+        .tab-btn:hover { background: #d7ccc8; }
+        .tab-btn.active { background: #5d4037; color: white; border-color: #3e2723; box-shadow: inset 1px 1px 3px rgba(0,0,0,0.3); }
+
+        #choices-area { flex-shrink: 0; min-height: auto; display: flex; flex-direction: column; gap: 8px; padding-top: 5px; }
+        
         .book-btn {
-            background: #fff;
-            border: 1px solid #5d4037;
-            padding: 12px;
-            text-align: left;
-            cursor: pointer;
-            font-family: "Yu Mincho", serif;
-            font-weight: bold;
-            color: #3e2723;
-            box-shadow: 2px 2px 0px rgba(93, 64, 55, 0.2);
-            font-size: 0.95em;
+            background: #fff; border: 1px solid #5d4037; padding: 12px; text-align: left;
+            cursor: pointer; font-family: "Yu Mincho", serif; font-weight: bold; color: #3e2723;
+            box-shadow: 2px 2px 0px rgba(93, 64, 55, 0.2); font-size: 0.95em;
         }
-        .book-btn:active { background: #efebe9; transform: translateY(1px); }
-        .book-btn.disabled { opacity: 0.6; background: #d7ccc8; }
+        .book-btn:active { background: #efebe9; transform: translateY(1px); box-shadow: none; }
+        .book-btn.disabled { opacity: 0.6; background: #d7ccc8; cursor: not-allowed; }
 
-        /* フッター */
         #footer-bar {
-            background: rgba(30, 20, 10, 0.95);
-            color: #ccc;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 5px 10px;
-            font-size: 0.8em;
-            border-top: 1px solid #5d4037;
-            flex-shrink: 0; /* 縮小禁止 */
-            min-height: 50px; /* 最低保証 */
-            box-sizing: border-box;
-            /* 折り返し許可 */
-            flex-wrap: wrap; 
+            background: rgba(30, 20, 10, 0.95); color: #ccc; display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 15px; font-size: 0.8em; border-top: 1px solid #5d4037; flex-shrink: 0; min-height: 50px; box-sizing: border-box; flex-wrap: wrap; gap: 10px;
         }
 
-        #stats-monitor {
-            font-family: "Consolas", monospace;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        .stat-item { color: #81c784; }
-        .limit-warn { color: #ffeb3b; }
-        .limit-danger { color: #ff5252; font-weight: bold; }
-
-        .footer-controls {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-left: auto;
-        }
-
+        .footer-controls { display: flex; align-items: center; gap: 10px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
         .system-btn {
-            background: #4e342e;
-            color: #fff;
-            border: 1px solid #6d4c41;
-            padding: 8px 12px;
-            cursor: pointer;
-            border-radius: 3px;
-            font-size: 0.9em;
-            white-space: nowrap;
+            background: #4e342e; color: #fff; border: 1px solid #6d4c41; padding: 8px 12px;
+            cursor: pointer; border-radius: 3px; font-size: 0.9em; white-space: nowrap;
         }
+        .system-btn:hover { background: #5d4037; }
+        .mute-btn { background: transparent; border: none; color: white; font-size: 1.4em; cursor: pointer; padding: 0 5px; }
 
-        /* モーダル */
         #config-modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 999;
-            display: flex; justify-content: center; align-items: center;
-            overflow-y: auto; 
+            background: rgba(0,0,0,0.9); z-index: 999; display: flex; justify-content: center; align-items: center; overflow-y: auto; 
         }
         .modal-box {
-            background: #fffaf0; color: #3e2723;
-            padding: 20px; border-radius: 4px; border: 4px double #5d4037;
-            width: 90%; max-width: 450px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.8);
-            position: relative;
+            background: #fffaf0; color: #3e2723; padding: 30px; border-radius: 4px; border: 4px double #5d4037;
+            width: 90%; max-width: 450px; box-shadow: 0 0 20px rgba(0,0,0,0.8); position: relative;
         }
-        .api-input-group { display: flex; align-items: center; gap: 5px; margin: 5px 0 15px; }
-        .help-btn { width: 30px; height: 30px; background: #8d6e63; color: white; border: none; border-radius: 50%; }
-        .help-box { display: none; background: #efebe9; padding: 10px; margin-bottom: 15px; font-size: 0.85em; }
-        input, select { padding: 10px; border: 1px solid #8d6e63; background: #fff; width: 100%; box-sizing: border-box; }
+        input, select { padding: 10px; border: 1px solid #8d6e63; background: #fff; width: 100%; box-sizing: border-box; margin-bottom: 15px;}
+        
+        /* タイトル画像プレビュー用CSS */
+        #cover-preview {
+            width: 100%; max-height: 200px; display: none; margin-bottom: 15px;
+            object-fit: contain; background-color: #3e2723;
+            border: 2px solid #5d4037; border-radius: 4px; box-sizing: border-box;
+        }
 
-        /* =========================================
-           ★ スマホ用レスポンシブ設定 v1.2
-           ========================================= */
         @media screen and (max-width: 768px) {
-            /* フッターの安全対策 */
-            #footer-bar {
-                flex-direction: column; /* 縦並び */
-                justify-content: center;
-                gap: 5px;
-                padding: 5px;
-                height: auto; /* コンテンツに合わせて伸びる */
-                padding-bottom: env(safe-area-inset-bottom); /* iPhone X以降の下部バー対策 */
-            }
-
-            #stats-monitor {
-                width: 100%;
-                justify-content: center;
-                font-size: 0.7em;
-                border-bottom: 1px solid #555;
-                padding-bottom: 2px;
-            }
-
-            .footer-controls {
-                width: 100%;
-                justify-content: center; /* 中央揃え */
-                margin: 0;
-                padding-bottom: 2px;
-            }
-
-            /* 本の縦スクロール化 */
-            #book-wrapper {
-                padding: 0;
-                display: block; 
-                overflow-y: auto; 
-                -webkit-overflow-scrolling: touch; /* スクロール慣性 */
-            }
-
-            #book-spread {
-                flex-direction: column; 
-                width: 100%;
-                height: auto; 
-                min-height: 100%;
-                box-shadow: none; 
-                border: none;
-                background-color: transparent; 
-            }
-
+            #book-wrapper { padding: 0; display: block; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+            #book-spread { flex-direction: column; width: 100%; height: auto; min-height: 100%; box-shadow: none; border: none; background-color: transparent; }
             #book-spine { display: none; } 
-
-            .page {
-                background-color: rgba(250, 245, 235, 0.98); 
-                margin-bottom: 0;
-                border-radius: 0;
-                border-bottom: 2px solid #8d6e63;
-                flex: none; 
-                height: auto;
-                padding: 15px;
-            }
-
-            /* 各要素の高さ調整 */
-            #scene-visual { height: 180px; margin-bottom: 10px; }
-            #scene-text-area { font-size: 1em; max-height: none; min-height: auto; }
-            #chat-log-area { height: 180px; } /* ログは見やすく */
-
-            /* スライダー調整 */
-            input[type="range"] { width: 80px; }
+            .page { background-color: rgba(250, 245, 235, 0.98); margin-bottom: 0; border-radius: 0; border-bottom: 2px solid #8d6e63; flex: none; height: auto; padding: 15px; }
+            #scene-visual { height: auto; max-height: 250px; min-height: 150px; margin-bottom: 10px; }
+            #right-main-wrapper { flex-direction: column; }
+            #vertical-tabs { width: 100%; flex-direction: row; border-left: none; border-bottom: 1px solid rgba(141, 110, 99, 0.4); padding-left: 0; padding-bottom: 8px; justify-content: center; }
+            .tab-btn { padding: 8px 30px; }
+            #scene-text-area, #chat-log-area { max-height: 40vh; min-height: 200px; } 
+            #footer-bar { flex-direction: column; justify-content: center; padding: 10px; height: auto; padding-bottom: env(safe-area-inset-bottom); }
+            .footer-controls { width: 100%; justify-content: center; }
+            input[type="range"] { width: 70px; }
         }
     </style>
-    <script type="importmap">
-      { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
-    </script>
 </head>
 <body>
+
+    <!-- 設定モーダル -->
     <div id="config-modal">
         <div class="modal-box">
-            <h2>AI GameBook Engine v1.1</h2>
+            <h2 style="text-align: center; border-bottom: 2px solid #8d6e63; padding-bottom: 10px; margin-top: 0;">GameBook Engine v3.3</h2>
             
-            <label>1. Gemini API Key</label>
-            <div class="api-input-group">
-                <input type="password" id="api-key" placeholder="API Keyを入力">
-                <button class="help-btn" onclick="toggleHelp()">?</button>
-            </div>
-            
-            <div id="help-text" class="help-box">
-                <strong>【APIキーの取得方法】</strong><br>
-                1. <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> へ<br>
-                2. 「Create API key」をクリック<br>
-                3. キーをコピーして貼り付け<br>
-            </div>
-
-            <label>2. 冒険の書を選ぶ</label>
-            <select id="preset-select" style="margin-bottom:10px;">
-                <option value="">(収録タイトルを選択)</option>
-                <option value="horror_village.json">ホラー：蝉時雨の忌み村</option>
+            <label>1. 冒険の書を選ぶ</label>
+            <select id="preset-select" onchange="handleCassetteSelect()">
+                <option value="">(リストを読み込んでいます...)</option>
             </select>
-            <input type="file" id="json-file" accept=".json" onchange="document.getElementById('preset-select').value=''">
+            <input type="file" id="json-file" accept=".json" onchange="document.getElementById('preset-select').value=''; handleCassetteSelect();">
             
-            <button class="book-btn" onclick="startNewGame()" style="width:100%; text-align:center; background:#8d6e63; color:white; margin-top:10px;">物語を始める</button>
+            <!-- ▼▼▼ カセットの表紙（ID:1の画像）プレビュー枠 ▼▼▼ -->
+            <img id="cover-preview" src="" alt="タイトル画像">
+            
+            <button class="book-btn" onclick="startNewGame()" style="width:100%; text-align:center; background:#8d6e63; color:white;">物語を始める</button>
             <div style="text-align:center; margin:10px; color:#888;">または</div>
             
             <input type="file" id="save-file" accept=".json" style="display:none" onchange="loadSaveGame(this)">
@@ -346,78 +173,127 @@
             
             <div id="error-message" style="color:#d32f2f; margin-top:10px; font-size:0.9em; text-align:center; font-weight:bold;"></div>
             
-            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed #8d6e63; text-align: center; font-size: 0.9em;">
-                <a href="editor.html" target="_blank" style="color: #5d4037; font-weight: bold;">✒️ 冒険の書エディターを開く</a>
+            <div style="margin-top: 25px; padding-top: 15px; border-top: 1px dashed #8d6e63; text-align: center; font-size: 0.95em;">
+                <a href="editor.html" target="_blank" style="color: #5d4037; font-weight: bold; text-decoration: none;">✒️ カセットエディターを開く</a>
             </div>
         </div>
     </div>
 
+    <!-- メインコンテナ -->
     <div id="main-container">
-        <div id="header-bar">
-            <span id="game-title">AI GameBook Engine</span>
-        </div>
+        <div id="header-bar"><span id="game-title">GameBook Engine</span></div>
 
         <div id="book-wrapper">
             <div id="book-spread">
                 <div class="page" id="left-page">
                     <img id="scene-visual" src="" alt="挿絵">
-                    <div id="scene-text-area">物語を読み込んでいます...</div>
                     <div id="inventory-area">
                         <strong>所持品:</strong> <span id="inventory-list">なし</span>
                     </div>
                 </div>
-                
                 <div id="book-spine"></div>
-
                 <div class="page" id="right-page">
-                    <div id="chat-log-area">
-                        <div class="log-entry log-system">システム: 準備完了</div>
-                    </div>
-                    <div id="choices-area">
+                    <div id="right-main-wrapper">
+                        <div id="tab-content-area">
+                            <div id="scene-text-area" style="display:block;">物語を読み込んでいます...</div>
+                            <div id="chat-log-area" style="display:none;">
+                                <div class="log-entry log-system">冒険の記録がここに記されます。</div>
+                            </div>
                         </div>
+                        <div id="vertical-tabs">
+                            <div id="tab-btn-text" class="tab-btn active" onclick="switchTab('text')" title="本編を読む">📖</div>
+                            <div id="tab-btn-log" class="tab-btn" onclick="switchTab('log')" title="システム・行動履歴">👣</div>
+                        </div>
+                    </div>
+                    <div id="choices-area"></div>
                 </div>
             </div>
         </div>
 
         <div id="footer-bar">
-            <div id="stats-monitor">
-                <span class="stat-item">RPM:<span id="stat-rpm">0/15</span></span>
-                <span class="stat-item">TPM:<span id="stat-tpm">0/1M</span></span>
-                <span class="stat-item">RPD:<span id="stat-rpd">0/1500</span></span>
-            </div>
-
+            <div style="font-size: 0.9em; color: #888;">Standalone Mode</div>
             <div class="footer-controls">
                 <span style="font-size:0.8em;">文字:</span>
-                <input type="range" min="12" max="24" value="16" oninput="changeFontSize(this.value)">
-                <button class="system-btn" onclick="saveProgress()">💾 保存</button>
-                <button id="btn-back" class="system-btn" onclick="executeBack()">↩️ 戻る</button>
+                <input type="range" min="14" max="28" value="18" oninput="changeFontSize(this.value)" style="margin:0; width: 90px;">
+                <button id="btn-mute" class="mute-btn" onclick="toggleMute()" title="ミュート切替">🔊</button>
+                <button class="system-btn" onclick="saveProgress()">💾 しおり作成</button>
+                <button id="btn-back" class="system-btn" onclick="executeBack()">↩️ 一つ戻る</button>
+                <button class="system-btn" onclick="location.reload()" style="background:#5d4037;">🏠 冒険の書を選ぶ</button>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import { GoogleGenerativeAI } from "@google/generative-ai";
-
+    <script>
         window.scenarioData = null;
-        window.genAI = null;
-        window.model = null;
         window.inventory = new Set();
         window.cassetteFileName = "";
         window.backUsed = false;
         window.lastTurnState = null;
-        
-        const LIMITS = { RPM: 15, TPM: 1000000, RPD: 1500 };
-        let requestHistory = [];
+        window.currentAudio = null;
+        window.currentAudioFile = "";
+        window.isMuted = false;
 
-        window.onload = () => {
-            const savedKey = localStorage.getItem('gemini_api_key');
-            if (savedKey) document.getElementById('api-key').value = savedKey;
-            updateStats(0);
+        async function loadPresetList() {
+            const select = document.getElementById('preset-select');
+            try {
+                const response = await fetch('preset_list.json');
+                if (!response.ok) throw new Error("List not found");
+                const list = await response.json();
+                
+                select.innerHTML = '<option value="">(収録タイトルを選択する場合はこちら)</option>';
+                list.forEach(item => {
+                    const opt = document.createElement('option');
+                    opt.value = item.file;
+                    opt.innerText = item.name;
+                    select.appendChild(opt);
+                });
+            } catch (err) {
+                console.warn("プリセットリスト読込失敗", err);
+                select.innerHTML = '<option value="">(手元のファイルを選択)</option><option value="sample.json">サンプル</option>';
+            }
+        }
+        
+        loadPresetList();
+
+        // ▼▼▼ カセット選択時にID:1の画像をプレビュー表示する処理 ▼▼▼
+        window.handleCassetteSelect = async () => {
+            const fileInput = document.getElementById('json-file');
+            const presetSelect = document.getElementById('preset-select');
+            const coverPreview = document.getElementById('cover-preview');
+            
+            let data = null;
+            try {
+                if (fileInput.files.length > 0) {
+                    const text = await new Promise(r => {
+                        const reader = new FileReader();
+                        reader.onload = e => r(e.target.result);
+                        reader.readAsText(fileInput.files[0]);
+                    });
+                    data = JSON.parse(text);
+                } else if (presetSelect.value) {
+                    const res = await fetch(presetSelect.value);
+                    if(res.ok) data = await res.json();
+                }
+            } catch(err) { console.warn("プレビュー読込エラー", err); }
+
+            if (data && data.events) {
+                const titleScene = data.events.find(e => e.id === 1);
+                if (titleScene && titleScene.image_url) {
+                    coverPreview.src = titleScene.image_url;
+                    coverPreview.style.display = 'block';
+                } else {
+                    coverPreview.style.display = 'none';
+                }
+            } else {
+                coverPreview.style.display = 'none';
+            }
         };
 
-        window.toggleHelp = () => {
-            const el = document.getElementById('help-text');
-            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+        window.switchTab = (target) => {
+            document.getElementById('scene-text-area').style.display = target === 'text' ? 'block' : 'none';
+            document.getElementById('chat-log-area').style.display = target === 'log' ? 'block' : 'none';
+            document.getElementById('tab-btn-text').classList.toggle('active', target === 'text');
+            document.getElementById('tab-btn-log').classList.toggle('active', target === 'log');
         };
 
         window.changeFontSize = (size) => {
@@ -425,22 +301,65 @@
             document.getElementById('chat-log-area').style.fontSize = size + "px";
         };
 
+        window.toggleMute = () => {
+            window.isMuted = !window.isMuted;
+            document.getElementById('btn-mute').innerText = window.isMuted ? "🔇" : "🔊";
+            if (window.currentAudio) window.currentAudio.muted = window.isMuted;
+        };
+
+        function playSceneSound(scene) {
+            const soundFile = scene.sound_file;
+            const soundLoop = scene.sound_loop || false;
+
+            if (!soundFile) {
+                if (window.currentAudio) {
+                    window.currentAudio.pause();
+                    window.currentAudio = null;
+                    window.currentAudioFile = "";
+                }
+                return;
+            }
+
+            if (window.currentAudioFile === soundFile) {
+                if (!soundLoop && window.currentAudio) {
+                    window.currentAudio.currentTime = 0;
+                    window.currentAudio.play().catch(e => console.warn(e));
+                }
+                return;
+            }
+
+            if (window.currentAudio) window.currentAudio.pause();
+
+            window.currentAudioFile = soundFile;
+            
+            const audioPath = (soundFile.startsWith('http://') || soundFile.startsWith('https://')) 
+                ? soundFile 
+                : "sound/" + soundFile;
+
+            window.currentAudio = new Audio(audioPath);
+            window.currentAudio.loop = soundLoop;
+            window.currentAudio.muted = window.isMuted;
+            
+            window.currentAudio.play().catch(e => {
+                console.warn("音声再生エラー:", e);
+                addLog(`【システム】音声の再生に失敗しました。`, 'system');
+            });
+        }
+
+        function playSE(soundFileName) {
+            if (!soundFileName) return;
+            const audioPath = (soundFileName.startsWith('http://') || soundFileName.startsWith('https://')) 
+                ? soundFileName 
+                : "sound/" + soundFileName;
+            const se = new Audio(audioPath);
+            se.muted = window.isMuted;
+            se.play().catch(e => console.warn("SE再生エラー:", e));
+        }
+
         async function prepareGame() {
-            const apiKey = document.getElementById('api-key').value;
             const fileInput = document.getElementById('json-file');
             const presetSelect = document.getElementById('preset-select');
             const errorMsg = document.getElementById('error-message');
-
-            if (!apiKey) { errorMsg.innerText = "APIキーを入力してください"; return false; }
-            localStorage.setItem('gemini_api_key', apiKey);
-            
-            try {
-                window.genAI = new GoogleGenerativeAI(apiKey);
-                window.model = window.genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); 
-            } catch(e) {
-                errorMsg.innerText = "モデル初期化エラー: " + e;
-                return false;
-            }
 
             if (fileInput.files.length > 0) {
                 window.cassetteFileName = fileInput.files[0].name;
@@ -463,7 +382,7 @@
                     window.scenarioData = await response.json();
                     applyTitle();
                     return true;
-                } catch (err) { errorMsg.innerText = "プリセット読込エラー: " + err; return false; }
+                } catch (err) { errorMsg.innerText = "リストからの読込エラー: " + err; return false; }
             } else {
                 errorMsg.innerText = "「冒険の書」を選択してください";
                 return false;
@@ -484,7 +403,9 @@
             updateInventoryUI();
             updateBackBtnState();
             document.getElementById('config-modal').style.display = 'none';
-            loadScene(window.scenarioData.events[0].id);
+            document.getElementById('chat-log-area').innerHTML = ''; 
+            switchTab('text'); 
+            loadScene(1); // 常にID:1(タイトル)から開始
         };
 
         window.checkAndLoadSave = () => {
@@ -519,7 +440,8 @@
                     updateInventoryUI();
                     updateBackBtnState();
                     document.getElementById('config-modal').style.display = 'none';
-                    addLog(`【システム】 しおりから再開します (${saveData.date})`, 'system');
+                    addLog(`【システム】 しおりから再開しました (${saveData.date})`, 'system');
+                    switchTab('text');
                     loadScene(saveData.currentSceneId);
                 } catch (err) { alert("ロード失敗: " + err); }
             };
@@ -531,29 +453,45 @@
             if (!scene) return;
             window.currentSceneId = sceneId;
 
+            // ▼▼▼ ID:1が読み込まれた時のリセット処理 ▼▼▼
+            if (sceneId === 1) {
+                if (window.inventory.size > 0 || window.backUsed || window.lastTurnState) {
+                    window.inventory.clear();
+                    window.backUsed = false;
+                    window.lastTurnState = null;
+                    addLog(`【システム】 タイトル画面に戻りました（所持品・状態リセット）`, 'system');
+                }
+                updateInventoryUI();
+                updateBackBtnState();
+            }
+
             if (scene.get_item && !window.inventory.has(scene.get_item)) {
                 window.inventory.add(scene.get_item);
                 updateInventoryUI();
                 addLog(`【入手】 ${scene.get_item}`, 'system');
             }
 
+            playSceneSound(scene);
+
             const visual = document.getElementById('scene-visual');
             visual.style.opacity = 0;
             setTimeout(() => {
                 visual.src = scene.image_url || "https://placehold.co/600x400/d7ccc8/5d4037?text=No+Image";
                 visual.style.opacity = 1;
-            }, 300);
+            }, 100);
 
-            document.getElementById('scene-text-area').innerHTML = 
-                `<strong style="font-size:1.1em; color:#8d6e63;">◆ ${scene.title}</strong><br><br>${scene.text}`;
+            const textArea = document.getElementById('scene-text-area');
+            textArea.innerHTML = `<strong style="font-size:1.2em; color:#8d6e63;">◆ ${scene.title}</strong><br><br>${scene.text.replace(/\n/g, '<br>')}`;
+            textArea.scrollTop = 0;
             
-            addLog(`\n━━ ${scene.title} ━━`, 'system');
             renderButtons(scene);
         };
 
         function renderButtons(scene) {
             const area = document.getElementById('choices-area');
             area.innerHTML = ''; 
+            
+            // ▼▼▼ 選択肢がない場合（ゲームオーバー・クリア）はID:1へ戻す ▼▼▼
             if (scene.next_options && scene.next_options.length > 0) {
                 scene.next_options.forEach(opt => {
                     const btn = document.createElement('div');
@@ -563,95 +501,26 @@
                     } else {
                         btn.className = 'book-btn';
                         btn.innerText = "▶ " + opt.label;
-                        btn.onclick = () => handleChoice(opt.target_id, opt.label, scene);
+                        btn.onclick = () => handleChoice(opt.target_id, opt.label, scene, opt.sound_file);
                     }
                     area.appendChild(btn);
                 });
             } else {
                 const btn = document.createElement('div');
                 btn.className = 'book-btn';
-                btn.innerText = "完 (タイトルへ)";
-                btn.onclick = () => location.reload();
+                btn.innerText = "完 (タイトルへ戻る)";
+                btn.onclick = () => loadScene(1);
                 area.appendChild(btn);
             }
         }
 
-        window.handleChoice = async (nextId, userAction, currentScene) => {
-            const nextScene = window.scenarioData.events.find(e => e.id === nextId);
-            const area = document.getElementById('choices-area');
-            
-            window.lastTurnState = {
-                sceneId: currentScene.id,
-                inventory: new Set(window.inventory)
-            };
+        window.handleChoice = (nextId, userAction, currentScene, seFileName) => {
+            window.lastTurnState = { sceneId: currentScene.id, inventory: new Set(window.inventory) };
             updateBackBtnState();
-
-            area.innerHTML = '<div style="color:#8d6e63; font-style:italic; padding:10px;">物語を紡いでいます...</div>';
-            addLog(`あなた: ${userAction}`, 'user');
-
-            const gmInstruction = window.scenarioData.global_settings?.ai_instruction || "あなたはGMです。";
-            const invStr = Array.from(window.inventory).join(", ");
-            const prompt = `${gmInstruction}\n【所持品】${invStr}\n【状況】${currentScene.text}\n【行動】${userAction}\n【結果】${nextScene.text}\n行動から結果までの過程を150文字以内の小説で描写せよ。`;
-
-            try {
-                const result = await window.model.generateContent(prompt);
-                const response = await result.response;
-                const text = response.text();
-                
-                const tokens = response.usageMetadata ? response.usageMetadata.totalTokenCount : 0;
-                updateStats(tokens);
-                
-                addLog(text, 'ai');
-                if(tokens > 0) addLog(`(消費: ${tokens} tokens)`, 'usage');
-
-                setTimeout(() => loadScene(nextId), 2000);
-            } catch (error) {
-                console.error(error);
-                addLog("エラー: AI接続失敗。移動します。", 'system');
-                setTimeout(() => loadScene(nextId), 2000);
-            }
+            addLog(`▶ ${userAction}`, 'user');
+            if(seFileName) playSE(seFileName);
+            loadScene(nextId);
         };
-
-        const getDailyStats = () => {
-            const s = JSON.parse(localStorage.getItem('gemini_game_stats') || '{"count":0, "date":""}');
-            const today = new Date().toLocaleDateString();
-            if(s.date !== today) { s.date = today; s.count = 0; }
-            return s;
-        };
-
-        function updateStats(newTokens) {
-            const s = getDailyStats();
-            if(newTokens !== 0 || s.count === 0) {
-                s.count++;
-                localStorage.setItem('gemini_game_stats', JSON.stringify(s));
-            }
-            if(newTokens !== 0) requestHistory.push({t: Date.now(), k: newTokens});
-            const now = Date.now();
-            requestHistory = requestHistory.filter(r => now - r.t < 60000);
-
-            const rpm = requestHistory.length;
-            const tpm = requestHistory.reduce((sum, r) => sum + r.k, 0);
-            const rpd = s.count;
-
-            setStatDisplay('rpm', rpm, LIMITS.RPM);
-            setStatDisplay('tpm', tpm, LIMITS.TPM, true);
-            setStatDisplay('rpd', rpd, LIMITS.RPD);
-        }
-        
-        function setStatDisplay(id, val, limit, isToken = false) {
-            const el = document.getElementById(`stat-${id}`);
-            let valStr = val;
-            let limitStr = limit;
-            if(isToken) {
-                valStr = (val >= 1000) ? (val/1000).toFixed(1) + "k" : val;
-                limitStr = (limit >= 1000000) ? (limit/1000000) + "M" : limit;
-            }
-            el.innerText = `${valStr}/${limitStr}`;
-            el.className = '';
-            if (val >= limit) el.classList.add('limit-danger');
-            else if (val >= limit * 0.8) el.classList.add('limit-warn');
-        }
-        setInterval(() => updateStats(0), 1000);
 
         window.saveProgress = () => {
              if (!window.currentSceneId) return;
@@ -666,6 +535,8 @@
                  backUsed: window.backUsed,
                  lastTurnState: window.lastTurnState
              };
+             addLog(`【システム】 しおりを作成しました。再開する時は冒険の書を選んでから、『しおりから再開』を押して、保存したファイルを読み込ませて下さい。`, 'system');
+             switchTab('log');
              const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
              const a = document.createElement('a');
              a.href = URL.createObjectURL(blob);
@@ -681,7 +552,7 @@
             window.backUsed = true;
             updateInventoryUI();
             updateBackBtnState();
-            addLog("--- 時を戻しました ---", 'system');
+            addLog("--- 一つ前に戻りました ---", 'system');
             loadScene(prev.sceneId);
         };
 

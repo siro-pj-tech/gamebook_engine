@@ -3,19 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gamebook Cassette Editor</title>
+    <title>GameBook Cassette Editor v2.2</title>
     <style>
         body { background: #222; color: #eee; font-family: sans-serif; display: flex; height: 100vh; margin: 0; overflow: hidden; }
-        
-        /* 左サイドバー：シーンリスト */
         #sidebar { width: 250px; background: #1a1a1a; border-right: 1px solid #444; display: flex; flex-direction: column; }
         #scene-list { flex-grow: 1; overflow-y: auto; padding: 10px; }
         .scene-item { padding: 10px; border-bottom: 1px solid #333; cursor: pointer; font-size: 0.9em; }
         .scene-item:hover { background: #333; }
         .scene-item.active { background: #4caf50; color: #fff; }
         #sidebar-footer { padding: 10px; border-top: 1px solid #444; }
-
-        /* メインエリア：編集フォーム */
         #main-editor { flex-grow: 1; padding: 20px; overflow-y: auto; background: #222; }
         .form-group { margin-bottom: 15px; border: 1px solid #444; padding: 15px; border-radius: 5px; background: #2a2a2a; }
         label { display: block; margin-bottom: 5px; color: #aaa; font-size: 0.8em; }
@@ -23,29 +19,24 @@
             width: 100%; padding: 8px; background: #333; border: 1px solid #555; color: #fff; box-sizing: border-box; 
         }
         textarea { height: 80px; resize: vertical; }
-        
-        /* 画像プレビュー */
         #image-preview { max-width: 200px; max-height: 150px; display: block; margin-top: 5px; border: 1px solid #555; }
-
-        /* 選択肢エリア */
         .option-item { background: #333; padding: 10px; margin-bottom: 5px; border-radius: 4px; border-left: 3px solid #4caf50; }
-        .btn { padding: 8px 15px; border: none; cursor: pointer; border-radius: 4px; font-size: 0.9em; }
+        .btn { padding: 8px 15px; border: none; cursor: pointer; border-radius: 4px; font-size: 0.9em; font-weight: bold; }
         .btn-primary { background: #4caf50; color: white; }
         .btn-danger { background: #f44336; color: white; }
         .btn-secondary { background: #555; color: white; }
-        
-        /* ヘッダー */
+        .btn-accent { background: #2196F3; color: white; }
         h2, h3 { margin-top: 0; border-bottom: 1px solid #555; padding-bottom: 5px; }
         .row { display: flex; gap: 10px; }
         .col { flex: 1; }
+        #generated-prompt { height: 250px; background: #111; color: #00ff00; font-family: monospace; font-size: 0.85em; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
     <div style="padding:10px; font-weight:bold; background:#111;">シーン一覧</div>
-    <div id="scene-list">
-        </div>
+    <div id="scene-list"></div>
     <div id="sidebar-footer">
         <button class="btn btn-primary" onclick="addNewScene()" style="width:100%">＋ 新規シーン追加</button>
     </div>
@@ -54,54 +45,65 @@
 <div id="main-editor">
     <div class="form-group">
         <h3>カセット設定 (Global)</h3>
-        <div class="row">
-            <div class="col">
-                <label>タイトル</label>
-                <input type="text" id="meta-title" onchange="updateMeta()">
-            </div>
-            <div class="col">
-                <label>ジャンル</label>
-                <input type="text" id="meta-genre" onchange="updateMeta()">
-            </div>
+        <div class="row" style="margin-bottom: 10px;">
+            <div class="col"><label>タイトル</label><input type="text" id="meta-title" onchange="updateMeta()"></div>
+            <div class="col"><label>ジャンル</label><input type="text" id="meta-genre" onchange="updateMeta()"></div>
         </div>
-        <label>AIへの指示 (GM Instruction)</label>
-        <textarea id="meta-instruction" onchange="updateMeta()"></textarea>
-        <div style="margin-top:10px;">
-            <button class="btn btn-secondary" onclick="exportJSON()">💾 JSONを保存 (ダウンロード)</button>
+        <div>
+            <button class="btn btn-primary" onclick="exportJSON()">💾 JSONを保存 (ダウンロード)</button>
             <input type="file" id="import-file" style="display:none" onchange="importJSON(this)">
             <button class="btn btn-secondary" onclick="document.getElementById('import-file').click()">📂 JSONを読込</button>
         </div>
     </div>
 
+    <div class="form-group" style="border-color: #2196F3;">
+        <h3 style="color: #2196F3;">🤖 AI用プロンプト・ジェネレーター</h3>
+        <p style="font-size:0.85em; color:#ccc;">作りたいゲームの設定を書いてボタンを押すと、ChatGPTやGeminiに投げて完璧なJSONを作らせるための指示文が生成されます。</p>
+        
+        <label>テーマ・あらすじ・希望する分岐などを自由に記述</label>
+        <textarea id="prompt-idea" placeholder="例：深夜の廃校からの脱出。アイテム「理科室の鍵」を見つけないと進めないルートと、怪物に捕まるバッドエンドを必ず入れて。全10シーンくらいで。"></textarea>
+        
+        <button class="btn btn-accent" onclick="generatePrompt()" style="margin-top: 10px; width: 100%;">指示文（プロンプト）を生成する</button>
+        
+        <div id="prompt-output-area" style="display: none; margin-top: 15px;">
+            <label>以下のテキストをコピーして、好きなAIチャットに貼り付けてください</label>
+            <textarea id="generated-prompt" readonly></textarea>
+            <button class="btn btn-secondary" onclick="copyPrompt()" style="margin-top: 5px;">📋 コピーする</button>
+        </div>
+    </div>
+
     <div id="scene-editor-area" style="display:none;">
         <div class="form-group">
+            <h3>シーン編集</h3>
             <div class="row">
-                <div class="col" style="flex:0 0 80px;">
-                    <label>ID</label>
-                    <input type="number" id="scene-id" readonly style="background:#444;">
-                </div>
-                <div class="col">
-                    <label>シーンタイトル</label>
-                    <input type="text" id="scene-title" oninput="saveCurrentScene()">
-                </div>
+                <div class="col" style="flex:0 0 80px;"><label>ID</label><input type="number" id="scene-id" readonly style="background:#444;"></div>
+                <div class="col"><label>シーンタイトル</label><input type="text" id="scene-title" oninput="saveCurrentScene()"></div>
             </div>
             
             <label>本文 (Text)</label>
             <textarea id="scene-text" style="height:120px;" oninput="saveCurrentScene()"></textarea>
 
-            <label>画像 (URL または ファイルを選択して埋め込み)</label>
-            <input type="text" id="scene-image-url" placeholder="http://... または 下でファイルをアップロード" oninput="previewImage(this.value); saveCurrentScene()">
+            <label style="margin-top: 10px;">シーンBGM (外部URL または sound/ファイル名)</label>
+            <div class="row" style="align-items: center;">
+                <div class="col" style="flex: 1;"><input type="text" id="scene-sound-file" placeholder="例: bgm_forest.mp3 (空欄で再生なし)" oninput="saveCurrentScene()"></div>
+                <div class="col" style="flex: 0 0 120px; display: flex; align-items: center; gap: 5px;">
+                    <input type="checkbox" id="scene-sound-loop" onchange="saveCurrentScene()" style="width: auto; margin: 0;">
+                    <label for="scene-sound-loop" style="margin: 0; cursor: pointer;">ループ再生</label>
+                </div>
+            </div>
+
+            <label style="margin-top: 10px;">画像 (URL または 画像生成AI用プロンプト)</label>
+            <input type="text" id="scene-image-url" placeholder="URL、または生成用プロンプト" oninput="previewImage(this.value); saveCurrentScene()">
             <input type="file" id="image-upload" accept="image/*" onchange="handleImageUpload(this)" style="margin-top:5px;">
             <img id="image-preview" src="">
 
-            <label>アイテム入手 (Get Item)</label>
+            <label style="margin-top: 10px;">アイテム入手 (Get Item)</label>
             <input type="text" id="scene-get-item" placeholder="入手するアイテム名 (空欄でなし)" oninput="saveCurrentScene()">
         </div>
 
         <div class="form-group">
             <label>選択肢 (Next Options)</label>
-            <div id="options-container">
-                </div>
+            <div id="options-container"></div>
             <button class="btn btn-secondary" onclick="addOption()">＋ 選択肢を追加</button>
         </div>
         
@@ -110,35 +112,29 @@
 </div>
 
 <script>
-    // デフォルトデータ構造
     let scenarioData = {
-        cartridge_info: { title: "新しい冒険", genre: "Fantasy" },
-        global_settings: { ai_instruction: "あなたはGMです。" },
+        cartridge_info: { title: "新しい冒険", genre: "ADV" },
         events: []
     };
     
     let currentSceneIndex = -1;
 
-    // 初期化
     window.onload = () => {
-        addNewScene(); // 最初のシーンを作る
+        addNewScene(); 
         renderSceneList();
         loadMeta();
     };
 
-    // メタデータの読み込み/保存
     function loadMeta() {
         document.getElementById('meta-title').value = scenarioData.cartridge_info.title || "";
         document.getElementById('meta-genre').value = scenarioData.cartridge_info.genre || "";
-        document.getElementById('meta-instruction').value = scenarioData.global_settings.ai_instruction || "";
     }
+    
     function updateMeta() {
         scenarioData.cartridge_info.title = document.getElementById('meta-title').value;
         scenarioData.cartridge_info.genre = document.getElementById('meta-genre').value;
-        scenarioData.global_settings.ai_instruction = document.getElementById('meta-instruction').value;
     }
 
-    // シーンリスト描画
     function renderSceneList() {
         const list = document.getElementById('scene-list');
         list.innerHTML = "";
@@ -152,7 +148,6 @@
         });
     }
 
-    // シーン選択時のフォーム入力
     function selectScene(index) {
         currentSceneIndex = index;
         const scene = scenarioData.events[index];
@@ -161,26 +156,24 @@
         document.getElementById('scene-id').value = scene.id;
         document.getElementById('scene-title').value = scene.title;
         document.getElementById('scene-text').value = scene.text;
+        
+        document.getElementById('scene-sound-file').value = scene.sound_file || "";
+        document.getElementById('scene-sound-loop').checked = scene.sound_loop || false;
         document.getElementById('scene-image-url').value = scene.image_url || "";
         document.getElementById('scene-get-item').value = scene.get_item || "";
         previewImage(scene.image_url || "");
 
         renderOptions(scene.next_options || []);
-        renderSceneList(); // ハイライト更新
+        renderSceneList(); 
     }
 
-    // 画像アップロード & Base64変換処理
     function handleImageUpload(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                // Base64文字列を取得
                 const base64String = e.target.result;
-                // URL入力欄に入れる
                 document.getElementById('scene-image-url').value = base64String;
-                // プレビュー表示
                 previewImage(base64String);
-                // 保存
                 saveCurrentScene();
             };
             reader.readAsDataURL(input.files[0]);
@@ -190,10 +183,9 @@
     function previewImage(url) {
         const img = document.getElementById('image-preview');
         img.src = url;
-        img.style.display = url ? 'block' : 'none';
+        img.style.display = url.startsWith('data:') || url.startsWith('http') ? 'block' : 'none';
     }
 
-    // 選択肢の描画
     function renderOptions(options) {
         const container = document.getElementById('options-container');
         container.innerHTML = "";
@@ -206,9 +198,15 @@
                     <div class="col"><label>ラベル</label><input type="text" value="${opt.label}" oninput="updateOption(${idx}, 'label', this.value)"></div>
                     <div class="col" style="flex:0 0 80px;"><label>行先ID</label><input type="number" value="${opt.target_id}" oninput="updateOption(${idx}, 'target_id', this.value)"></div>
                 </div>
-                <div style="margin-top:5px;">
-                    <label>必要アイテム</label>
-                    <input type="text" value="${opt.req_item || ''}" placeholder="空欄で制限なし" oninput="updateOption(${idx}, 'req_item', this.value)">
+                <div class="row" style="margin-top:5px;">
+                    <div class="col">
+                        <label>必要アイテム</label>
+                        <input type="text" value="${opt.req_item || ''}" placeholder="空欄で制限なし" oninput="updateOption(${idx}, 'req_item', this.value)">
+                    </div>
+                    <div class="col">
+                        <label>効果音</label>
+                        <input type="text" value="${opt.sound_file || ''}" placeholder="例: se_door.mp3" oninput="updateOption(${idx}, 'sound_file', this.value)">
+                    </div>
                 </div>
                 <button class="btn btn-danger" style="margin-top:5px; font-size:0.8em;" onclick="removeOption(${idx})">削除</button>
             `;
@@ -216,30 +214,28 @@
         });
     }
 
-    // データの保存（入力があるたびに更新）
     window.saveCurrentScene = function() {
         if (currentSceneIndex === -1) return;
         const scene = scenarioData.events[currentSceneIndex];
-        
         scene.title = document.getElementById('scene-title').value;
         scene.text = document.getElementById('scene-text').value;
+        scene.sound_file = document.getElementById('scene-sound-file').value;
+        scene.sound_loop = document.getElementById('scene-sound-loop').checked;
         scene.image_url = document.getElementById('scene-image-url').value;
         scene.get_item = document.getElementById('scene-get-item').value;
         
-        // リストのタイトル更新のため再描画
         const listItems = document.querySelectorAll('.scene-item');
         if(listItems[currentSceneIndex]) {
             listItems[currentSceneIndex].innerText = `ID:${scene.id} ${scene.title}`;
         }
     };
 
-    // 選択肢操作
     window.addOption = function() {
         if (currentSceneIndex === -1) return;
         if (!scenarioData.events[currentSceneIndex].next_options) {
             scenarioData.events[currentSceneIndex].next_options = [];
         }
-        scenarioData.events[currentSceneIndex].next_options.push({ label: "選択肢", target_id: 1 });
+        scenarioData.events[currentSceneIndex].next_options.push({ label: "選択肢", target_id: 1, req_item: "", sound_file: "" });
         renderOptions(scenarioData.events[currentSceneIndex].next_options);
     };
 
@@ -253,15 +249,10 @@
         renderOptions(scenarioData.events[currentSceneIndex].next_options);
     };
 
-    // シーン操作
     window.addNewScene = function() {
-        // 新しいIDを自動生成（最大ID + 1）
         const maxId = scenarioData.events.reduce((max, s) => Math.max(max, s.id), 0);
         const newScene = {
-            id: maxId + 1,
-            title: "新規シーン",
-            text: "ここに本文を入力...",
-            next_options: []
+            id: maxId + 1, title: "新規シーン", text: "ここに本文を入力...", sound_file: "", sound_loop: false, next_options: []
         };
         scenarioData.events.push(newScene);
         renderSceneList();
@@ -276,8 +267,8 @@
         currentSceneIndex = -1;
     };
 
-    // ファイル入出力
     window.exportJSON = function() {
+        if(scenarioData.global_settings) delete scenarioData.global_settings;
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(scenarioData, null, 2));
         const downloadAnchorNode = document.createElement('a');
         downloadAnchorNode.setAttribute("href", dataStr);
@@ -298,13 +289,59 @@
                 renderSceneList();
                 document.getElementById('scene-editor-area').style.display = 'none';
                 alert("読み込み完了！");
-            } catch(err) {
-                alert("エラー: JSONファイルではありません");
-            }
+            } catch(err) { alert("エラー: JSONファイルではありません"); }
         };
         reader.readAsText(file);
     };
 
+    // ▼▼▼ プロンプトジェネレーター（ID:1 タイトル画面仕様に変更） ▼▼▼
+    window.generatePrompt = function() {
+        const idea = document.getElementById('prompt-idea').value;
+        const promptTemplate = `あなたは優秀なゲームシナリオライター兼データモデラーです。
+以下の【要望】をもとに、ブラウザゲームエンジンで動作する「ゲームブック」のシナリオを設計し、そのまま読み込める完全なJSONデータのみを出力してください。
+
+【要望・世界観】
+${idea || "(ここにテーマやあらすじを指定してください)"}
+
+【執筆ルール】
+1. ID: 1 は必ず「タイトル画面」として作成してください。"text" にはあらすじや導入文を書き、"image_url" にはタイトルロゴや表紙となる画像生成用プロンプトを指定してください。
+2. このゲームはAIによる自動補完を行いません。「text」フィールドには、行動結果と情景描写を完全に書き切ってください。
+3. ゲームオーバー（即死バッドエンド）や物語のクリアなど、次の選択肢がないシーンでは "next_options" を空配列 \`[]\` にしてください。エンジン側で自動的に「タイトル(ID:1)へ戻る」ボタンが表示されます。
+4. 分岐は一本道にせず、「アイテムがないと選べない選択肢(req_item)」「ループ構造」などを必ず含めてください。
+5. 各シーンの「image_url」には、その場面を表す画像生成用英語プロンプトを記載してください。
+
+【出力JSONスキーマ】
+{
+  "cartridge_info": { "title": "タイトル", "genre": "ジャンル" },
+  "events": [
+    {
+      "id": 1,
+      "title": "タイトル画面の見出し",
+      "text": "あらすじや導入文",
+      "image_url": "画像生成用英語プロンプト",
+      "get_item": "",
+      "next_options": [
+        { "label": "ゲームスタート", "target_id": 2, "req_item": "", "sound_file": "" }
+      ]
+    }
+  ]
+}
+
+必ずマークダウンのコードブロック(\`\`\`json ... \`\`\`)を使用してJSONのみを出力してください。`;
+
+        const outputArea = document.getElementById('prompt-output-area');
+        const generatedText = document.getElementById('generated-prompt');
+        
+        generatedText.value = promptTemplate;
+        outputArea.style.display = 'block';
+    };
+
+    window.copyPrompt = function() {
+        const text = document.getElementById('generated-prompt');
+        text.select();
+        document.execCommand('copy');
+        alert("プロンプトをクリップボードにコピーしました！ChatGPTやGeminiに貼り付けてください。");
+    };
 </script>
 </body>
 </html>
